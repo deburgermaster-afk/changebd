@@ -68,7 +68,7 @@ function CandidateCard({ candidate, voteResult, isSelected, hasVoted, onSelect, 
           className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold text-lg p-2 ${isShahid ? "ring-4 ring-amber-400 shadow-lg shadow-amber-400/30" : ""}`}
           style={{ backgroundColor: partyColor }}
         >
-          <PartyLogo symbol={getPartySymbol(candidate.partyId)} className="w-6 h-6 sm:w-7 sm:h-7 invert brightness-0 invert" alt={partyName} />
+          <PartyLogo symbol={getPartySymbol(candidate.partyId)} className="w-6 h-6 sm:w-7 sm:h-7" alt={partyName} />
         </div>
         
         <div className="flex-1 min-w-0">
@@ -210,47 +210,48 @@ function ConstituencyDetail({ constituency, onBack }: ConstituencyDetailProps) {
       const canvas = await html2canvas(shareRef.current, {
         scale: 2,
         useCORS: true,
-        backgroundColor: null,
+        backgroundColor: "#ffffff",
       });
       
-      canvas.toBlob(async (blob) => {
-        if (!blob) {
-          toast({ title: "Failed to generate image", variant: "destructive" });
-          setIsSharing(false);
-          return;
+      const blob = await new Promise<Blob | null>((resolve) => {
+        canvas.toBlob((b) => resolve(b), "image/png");
+      });
+      
+      if (!blob) {
+        toast({ title: "Failed to generate image", variant: "destructive" });
+        return;
+      }
+      
+      const file = new File([blob], `jonomotbd-${constituency.code}.png`, { type: "image/png" });
+      
+      if (navigator.share && navigator.canShare?.({ files: [file] })) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: `${constituency.code} - Vote Results`,
+            text: `Check out the voting results for ${constituency.code} on JonomotBD!`,
+          });
+        } catch {
+          downloadBlob(blob);
         }
-        
-        const file = new File([blob], `jonomotbd-${constituency.code}.png`, { type: "image/png" });
-        
-        if (navigator.share && navigator.canShare?.({ files: [file] })) {
-          try {
-            await navigator.share({
-              files: [file],
-              title: `${constituency.code} - Vote Results`,
-              text: `Check out the voting results for ${constituency.code} on JonomotBD!`,
-            });
-          } catch (err) {
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = `jonomotbd-${constituency.code}.png`;
-            link.click();
-            URL.revokeObjectURL(link.href);
-          }
-        } else {
-          const link = document.createElement("a");
-          link.href = URL.createObjectURL(blob);
-          link.download = `jonomotbd-${constituency.code}.png`;
-          link.click();
-          URL.revokeObjectURL(link.href);
-        }
-        
-        toast({ title: "Share image ready!" });
-        setIsSharing(false);
-      }, "image/png");
-    } catch (err) {
+      } else {
+        downloadBlob(blob);
+      }
+      
+      toast({ title: "Share image ready!" });
+    } catch {
       toast({ title: "Failed to generate share image", variant: "destructive" });
+    } finally {
       setIsSharing(false);
     }
+  };
+
+  const downloadBlob = (blob: Blob) => {
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `jonomotbd-${constituency.code}.png`;
+    link.click();
+    URL.revokeObjectURL(link.href);
   };
 
   return (
@@ -313,20 +314,20 @@ function ConstituencyDetail({ constituency, onBack }: ConstituencyDetailProps) {
       </div>
 
       {hasVoted && chartData.length > 0 && (
-        <div ref={shareRef} className="rounded-lg overflow-hidden">
-          <Card className="p-3 sm:p-4 bg-gradient-to-br from-[#006A4E]/5 to-[#F42A41]/5">
+        <div ref={shareRef} className="rounded-lg overflow-hidden" data-testid="share-container">
+          <Card className="p-3 sm:p-4">
             <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
               <div>
-                <h3 className="font-bold text-sm sm:text-base">{constituency.code} - {constituency.nameBn}</h3>
+                <h3 className="font-bold text-sm sm:text-base" data-testid="text-share-constituency">{constituency.code} - {constituency.nameBn}</h3>
                 <p className="text-xs text-muted-foreground">{constituency.district}, {constituency.division}</p>
               </div>
               <div className="text-right">
-                <p className="text-xs font-medium">{totalVotes.toLocaleString()} votes</p>
-                <p className="text-[10px] text-muted-foreground">on JonomotBD</p>
+                <p className="text-xs font-medium" data-testid="text-share-votes">{totalVotes.toLocaleString()} votes</p>
+                <p className="text-xs text-muted-foreground">on JonomotBD</p>
               </div>
             </div>
             
-            <div className="bg-card rounded-md p-2 sm:p-3">
+            <div className="bg-muted/30 rounded-md p-2 sm:p-3">
               <ResponsiveContainer width="100%" height={Math.max(150, chartData.length * 45)}>
                 <BarChart 
                   data={chartData} 
@@ -365,16 +366,17 @@ function ConstituencyDetail({ constituency, onBack }: ConstituencyDetailProps) {
                       dataKey="votes" 
                       position="right" 
                       formatter={(value: number) => `${value.toLocaleString()}`}
-                      className="fill-foreground text-[10px]"
+                      className="text-xs"
+                      style={{ fill: "currentColor" }}
                     />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
             
-            <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/50">
-              <p className="text-[10px] text-muted-foreground">Bangladesh 2026 Election</p>
-              <p className="text-[10px] font-medium text-primary">jonomotbd.replit.app</p>
+            <div className="flex items-center justify-between mt-2 pt-2 border-t border-border">
+              <p className="text-xs text-muted-foreground">Bangladesh 2026 Election</p>
+              <p className="text-xs font-medium text-primary" data-testid="text-share-url">jonomotbd.replit.app</p>
             </div>
           </Card>
         </div>

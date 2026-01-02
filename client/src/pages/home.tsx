@@ -80,15 +80,15 @@ export default function HomePage() {
     <div className="min-h-screen flex flex-col">
       <HeroSection stats={stats} />
 
-      <section className="py-12 bg-muted/30">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
+      <section className="py-8 sm:py-12 bg-muted/30">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4">
+          <div className="flex items-center justify-between gap-2 sm:gap-4 mb-4 sm:mb-6 flex-wrap">
             <div>
-              <h2 className="text-2xl font-bold" data-testid="text-recent-cases-title">Recent Cases</h2>
-              <p className="text-muted-foreground text-sm">The latest issues raised by the community</p>
+              <h2 className="text-xl sm:text-2xl font-bold" data-testid="text-recent-cases-title">Recent Cases</h2>
+              <p className="text-muted-foreground text-xs sm:text-sm">Latest issues raised by the community</p>
             </div>
             <Link href="/cases">
-              <Button variant="outline" className="gap-1" data-testid="button-view-all-cases">
+              <Button variant="outline" size="sm" className="gap-1" data-testid="button-view-all-cases">
                 View All
                 <ArrowRight className="h-4 w-4" />
               </Button>
@@ -110,14 +110,14 @@ export default function HomePage() {
         isLoading={partyLoading}
       />
 
-      <section className="py-12 bg-muted/30">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="grid gap-8 lg:grid-cols-2">
+      <section className="py-8 sm:py-12 bg-muted/30">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4">
+          <div className="grid gap-6 sm:gap-8 lg:grid-cols-2">
             <div>
-              <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
+              <div className="flex items-center justify-between gap-2 sm:gap-4 mb-4 sm:mb-6 flex-wrap">
                 <div>
-                  <h2 className="text-2xl font-bold" data-testid="text-active-polls-title">Active Polls</h2>
-                  <p className="text-muted-foreground text-sm">Have your say on current issues</p>
+                  <h2 className="text-xl sm:text-2xl font-bold" data-testid="text-active-polls-title">Active Polls</h2>
+                  <p className="text-muted-foreground text-xs sm:text-sm">Have your say on current issues</p>
                 </div>
                 <Link href="/vote">
                   <Button variant="outline" size="sm" className="gap-1">

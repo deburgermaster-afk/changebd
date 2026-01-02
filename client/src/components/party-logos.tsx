@@ -29,7 +29,7 @@ export function PartyLogo({ symbol, className = "w-6 h-6", alt = "Party symbol" 
   const logoSrc = partyLogos[symbol];
   
   if (!logoSrc) {
-    return <User className={className} />;
+    return <User className={className} data-testid={`img-party-fallback-${symbol}`} />;
   }
 
   return (
@@ -37,6 +37,7 @@ export function PartyLogo({ symbol, className = "w-6 h-6", alt = "Party symbol" 
       src={logoSrc} 
       alt={alt} 
       className={`${className} object-contain`}
+      data-testid={`img-party-logo-${symbol}`}
     />
   );
 }

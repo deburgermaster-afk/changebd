@@ -75,25 +75,25 @@ function PartyButton({ party, voteResult, isSelected, hasVoted, onVote, isPendin
         </div>
       )}
       
-      <div className={`flex items-center gap-3 ${isBanned ? "opacity-40" : ""}`}>
+      <div className={`flex items-center gap-2 sm:gap-3 ${isBanned ? "opacity-40" : ""}`}>
         <div 
-          className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
+          className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center flex-shrink-0"
           style={{ backgroundColor: `${party.color}20`, border: `2px solid ${party.color}` }}
         >
-          <PartySymbol symbol={party.symbol} color={party.color} size={20} />
+          <PartySymbol symbol={party.symbol} color={party.color} size={18} />
         </div>
         
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="font-semibold text-sm truncate">{party.name}</h3>
-            <Badge variant="secondary" className="text-xs">{party.shortName}</Badge>
+          <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+            <h3 className="font-semibold text-xs sm:text-sm truncate">{party.name}</h3>
+            <Badge variant="secondary" className="text-[10px] sm:text-xs hidden sm:inline-flex">{party.shortName}</Badge>
           </div>
-          <p className="text-xs text-muted-foreground mt-0.5">{party.description}</p>
+          <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 line-clamp-1">{party.description}</p>
           
           {hasVoted && !isBanned && (
-            <div className="flex items-center gap-3 mt-2 text-xs">
+            <div className="flex items-center gap-2 sm:gap-3 mt-1 sm:mt-2 text-[10px] sm:text-xs">
               <span className="font-medium tabular-nums">{percentage.toFixed(1)}%</span>
-              <span className="text-muted-foreground tabular-nums">{votes.toLocaleString()} votes</span>
+              <span className="text-muted-foreground tabular-nums">{votes.toLocaleString()}</span>
             </div>
           )}
         </div>
@@ -195,17 +195,17 @@ export function PartyVotingSection({
   }
 
   return (
-    <section className="py-8" data-testid="section-party-voting">
-      <div className="max-w-4xl mx-auto px-4">
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold flex items-center gap-2" data-testid="text-party-voting-title">
-            <Vote className="h-6 w-6 text-primary" />
-            Political Party Voting
+    <section className="py-6 sm:py-8" data-testid="section-party-voting">
+      <div className="max-w-4xl mx-auto px-3 sm:px-4">
+        <div className="mb-4 sm:mb-6">
+          <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2" data-testid="text-party-voting-title">
+            <Vote className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+            Party Voting
           </h2>
-          <p className="text-muted-foreground text-sm mt-1">
+          <p className="text-muted-foreground text-xs sm:text-sm mt-1">
             {effectiveHasVoted 
-              ? `You've voted! See results from ${totalVotes.toLocaleString()} voters below.`
-              : "Tap any party below to cast your anonymous vote instantly"}
+              ? `You voted! ${totalVotes.toLocaleString()} total votes.`
+              : "Tap to cast your anonymous vote"}
           </p>
         </div>
 
@@ -283,7 +283,7 @@ export function PartyVotingSection({
           </Card>
         )}
 
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid gap-2 sm:gap-3 md:grid-cols-2">
           {politicalParties.map((party) => (
             <PartyButton
               key={party.id}
@@ -298,10 +298,10 @@ export function PartyVotingSection({
         </div>
 
         {effectiveHasVoted && (
-          <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
-            <Users className="h-4 w-4" />
+          <div className="mt-3 sm:mt-4 flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+            <Users className="h-3 w-3 sm:h-4 sm:w-4" />
             <span data-testid="text-total-party-votes">
-              Total anonymous votes: {totalVotes.toLocaleString()}
+              Total votes: {totalVotes.toLocaleString()}
             </span>
           </div>
         )}

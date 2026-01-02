@@ -22,13 +22,13 @@ export function HeroSection({ stats }: HeroSectionProps) {
         </svg>
       </div>
       
-      <div className="relative max-w-7xl mx-auto px-4 py-16 md:py-24">
+      <div className="relative max-w-7xl mx-auto px-3 sm:px-4 py-10 sm:py-16 md:py-24">
         <div className="max-w-3xl mx-auto text-center">
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-4" data-testid="text-hero-title">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-3 sm:mb-4" data-testid="text-hero-title">
             Voice of <span className="text-gradient-bd">Bangladesh</span>
           </h1>
-          <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto" data-testid="text-hero-subtitle">
-            Raise your voice, vote on issues, report scammers - all anonymously and encrypted.
+          <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-6 sm:mb-8 max-w-2xl mx-auto" data-testid="text-hero-subtitle">
+            Raise your voice, vote on issues, report scammers - all anonymously.
             Together we build a better Bangladesh.
           </p>
           
@@ -37,46 +37,46 @@ export function HeroSection({ stats }: HeroSectionProps) {
             <span>Fully Anonymous & Encrypted</span>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-3 mb-12">
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-8 sm:mb-12">
             <Link href="/submit">
-              <Button size="lg" data-testid="button-hero-raise-voice">
+              <Button size="default" className="sm:h-11 sm:px-6" data-testid="button-hero-raise-voice">
                 Raise Your Voice
               </Button>
             </Link>
             <Link href="/cases">
-              <Button variant="outline" size="lg" data-testid="button-hero-browse">
+              <Button variant="outline" size="default" className="sm:h-11 sm:px-6" data-testid="button-hero-browse">
                 Browse Cases
               </Button>
             </Link>
           </div>
 
-          <div className="grid grid-cols-3 gap-4 max-w-lg mx-auto">
-            <Card className="p-4 text-center">
-              <div className="flex items-center justify-center mb-2">
-                <FileText className="h-5 w-5 text-primary" />
+          <div className="grid grid-cols-3 gap-2 sm:gap-4 max-w-lg mx-auto">
+            <Card className="p-2 sm:p-4 text-center">
+              <div className="flex items-center justify-center mb-1 sm:mb-2">
+                <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               </div>
-              <div className="text-2xl font-bold tabular-nums" data-testid="stat-active-cases">
+              <div className="text-lg sm:text-2xl font-bold tabular-nums" data-testid="stat-active-cases">
                 {stats?.activeCases ?? 0}
               </div>
-              <div className="text-xs text-muted-foreground">Active Cases</div>
+              <div className="text-[10px] sm:text-xs text-muted-foreground">Active Cases</div>
             </Card>
-            <Card className="p-4 text-center">
-              <div className="flex items-center justify-center mb-2">
-                <TrendingUp className="h-5 w-5 text-primary" />
+            <Card className="p-2 sm:p-4 text-center">
+              <div className="flex items-center justify-center mb-1 sm:mb-2">
+                <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               </div>
-              <div className="text-2xl font-bold tabular-nums" data-testid="stat-total-votes">
+              <div className="text-lg sm:text-2xl font-bold tabular-nums" data-testid="stat-total-votes">
                 {stats?.totalVotes ?? 0}
               </div>
-              <div className="text-xs text-muted-foreground">Total Votes</div>
+              <div className="text-[10px] sm:text-xs text-muted-foreground">Total Votes</div>
             </Card>
-            <Card className="p-4 text-center">
-              <div className="flex items-center justify-center mb-2">
-                <Users className="h-5 w-5 text-primary" />
+            <Card className="p-2 sm:p-4 text-center">
+              <div className="flex items-center justify-center mb-1 sm:mb-2">
+                <Users className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               </div>
-              <div className="text-2xl font-bold tabular-nums" data-testid="stat-verified-reports">
+              <div className="text-lg sm:text-2xl font-bold tabular-nums" data-testid="stat-verified-reports">
                 {stats?.verifiedReports ?? 0}
               </div>
-              <div className="text-xs text-muted-foreground">Verified Reports</div>
+              <div className="text-[10px] sm:text-xs text-muted-foreground">Verified</div>
             </Card>
           </div>
         </div>
