@@ -2,21 +2,53 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
-import { Search, MapPin, Users, Check, Vote, User, ChevronRight, Building } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, LabelList } from "recharts";
+import { Search, MapPin, Users, Check, Vote, User, ChevronRight, Building, Wheat, BookOpen, Star, Moon, Flame, Hammer, UserCircle } from "lucide-react";
 import { type Constituency, type ConstituencyVoteResult, divisions, politicalParties } from "@shared/schema";
 
-function getPartyColor(partyId: string): string {
-  return politicalParties.find(p => p.id === partyId)?.color ?? "#6B7280";
+function getParty(partyId: string) {
+  return politicalParties.find(p => p.id === partyId);
 }
 
-function getPartyName(partyId: string): string {
-  return politicalParties.find(p => p.id === partyId)?.shortName ?? "IND";
+function getPartyColor(partyId: string): string {
+  return getParty(partyId)?.color ?? "#6B7280";
+}
+
+function getPartyFullName(partyId: string): string {
+  return getParty(partyId)?.name ?? "Independent";
+}
+
+function PartyIcon({ partyId, className = "w-4 h-4", style }: { partyId: string; className?: string; style?: React.CSSProperties }) {
+  const party = getParty(partyId);
+  const symbol = party?.symbol;
+  
+  switch (symbol) {
+    case "boat":
+      return <Building className={className} style={style} />;
+    case "sheaf":
+      return <Wheat className={className} style={style} />;
+    case "scales":
+      return <BookOpen className={className} style={style} />;
+    case "plough":
+      return <Hammer className={className} style={style} />;
+    case "crescent":
+      return <Moon className={className} style={style} />;
+    case "torch":
+      return <Flame className={className} style={style} />;
+    case "star":
+      return <Star className={className} style={style} />;
+    case "hammer-sickle":
+      return <Hammer className={className} style={style} />;
+    case "people":
+      return <UserCircle className={className} style={style} />;
+    default:
+      return <User className={className} style={style} />;
+  }
 }
 
 interface CandidateCardProps {
@@ -29,51 +61,62 @@ interface CandidateCardProps {
 }
 
 function CandidateCard({ candidate, voteResult, isSelected, hasVoted, onSelect, isPending }: CandidateCardProps) {
-  const partyColor = getPartyColor(candidate.partyId);
-  const partyName = getPartyName(candidate.partyId);
+  const party = getParty(candidate.partyId);
+  const partyColor = party?.color ?? "#6B7280";
+  const partyName = party?.name ?? "Independent";
   const votes = voteResult?.votes ?? 0;
   const percentage = voteResult?.percentage ?? 0;
+  const isShahid = candidate.partyId === "shahid";
 
   return (
     <button
       onClick={onSelect}
-      disabled={hasVoted || isPending}
+      disabled={hasVoted || isPending || isShahid}
       className={`
-        w-full p-4 rounded-md border transition-all text-left
-        ${isSelected 
-          ? "bg-primary/10 border-primary ring-2 ring-primary" 
-          : hasVoted 
-            ? "bg-muted/50 cursor-default"
-            : "bg-card border-border hover-elevate active-elevate-2 cursor-pointer"
+        w-full p-4 rounded-md border-2 transition-all text-left
+        ${isShahid 
+          ? "bg-gradient-to-r from-amber-100 to-yellow-50 dark:from-amber-900/30 dark:to-yellow-900/20 border-amber-400 ring-2 ring-amber-400/50 cursor-default"
+          : isSelected 
+            ? "bg-primary/10 border-primary ring-2 ring-primary" 
+            : hasVoted 
+              ? "bg-muted/50 cursor-default border-border"
+              : "bg-card border-border hover-elevate active-elevate-2 cursor-pointer"
         }
       `}
       data-testid={`button-vote-candidate-${candidate.id}`}
     >
       <div className="flex items-center gap-4">
         <div 
-          className="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold text-lg"
+          className={`w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold text-lg ${isShahid ? "ring-4 ring-amber-400 shadow-lg shadow-amber-400/30" : ""}`}
           style={{ backgroundColor: partyColor }}
         >
-          <User className="w-6 h-6" />
+          <PartyIcon partyId={candidate.partyId} className="w-6 h-6" />
         </div>
         
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="font-semibold">{candidate.name}</h3>
-            <Badge 
-              variant="secondary" 
-              className="text-xs"
-              style={{ backgroundColor: `${partyColor}20`, color: partyColor }}
-            >
-              {partyName}
-            </Badge>
+            <h3 className={`font-semibold ${isShahid ? "text-amber-700 dark:text-amber-400" : ""}`}>{candidate.name}</h3>
+            {isShahid && (
+              <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+            )}
           </div>
           <p className="text-sm text-muted-foreground">{candidate.nameBn}</p>
+          
+          <div className="flex items-center gap-2 mt-2 flex-wrap">
+            <div 
+              className="flex items-center gap-1.5 px-2 py-0.5 rounded-md"
+              style={{ backgroundColor: `${partyColor}15` }}
+            >
+              <PartyIcon partyId={candidate.partyId} className="w-3.5 h-3.5" style={{ color: partyColor }} />
+              <span className="text-xs font-medium text-foreground">{partyName}</span>
+            </div>
+          </div>
+          
           {candidate.profession && (
             <p className="text-xs text-muted-foreground mt-1">{candidate.profession}</p>
           )}
           
-          {hasVoted && (
+          {hasVoted && !isShahid && (
             <div className="flex items-center gap-3 mt-2 text-sm">
               <span className="font-medium tabular-nums">{percentage.toFixed(1)}%</span>
               <span className="text-muted-foreground tabular-nums">{votes.toLocaleString()} votes</span>
@@ -81,7 +124,7 @@ function CandidateCard({ candidate, voteResult, isSelected, hasVoted, onSelect, 
           )}
         </div>
         
-        {isSelected && hasVoted && (
+        {isSelected && hasVoted && !isShahid && (
           <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
             <Check className="w-4 h-4 text-primary-foreground" />
           </div>
@@ -126,6 +169,8 @@ function ConstituencyDetail({ constituency, onBack }: ConstituencyDetailProps) {
   const selectedCandidateId = voteStatus?.[constituency.id] || localVotedCandidate;
 
   const handleSelectCandidate = (candidateId: string) => {
+    const candidate = constituency.candidates.find(c => c.id === candidateId);
+    if (candidate?.partyId === "shahid") return;
     if (hasVoted || isPending || voteError) return;
     setConfirmCandidate(candidateId);
   };
@@ -157,16 +202,25 @@ function ConstituencyDetail({ constituency, onBack }: ConstituencyDetailProps) {
     return votes?.find(v => v.candidateId === candidateId);
   };
 
+  const votableCandidates = constituency.candidates.filter(c => c.partyId !== "shahid");
+  
   const chartData = hasVoted && votes
-    ? constituency.candidates.map(c => ({
-        name: c.name.split(" ").slice(-1)[0],
-        party: getPartyName(c.partyId),
-        votes: getVoteResult(c.id)?.votes ?? 0,
-        color: getPartyColor(c.partyId),
-      })).sort((a, b) => b.votes - a.votes)
+    ? votableCandidates.map(c => {
+        const result = getVoteResult(c.id);
+        return {
+          name: c.name.split(" ").slice(-1)[0],
+          fullName: c.name,
+          party: getPartyFullName(c.partyId),
+          votes: result?.votes ?? 0,
+          color: getPartyColor(c.partyId),
+        };
+      }).sort((a, b) => b.votes - a.votes)
     : [];
 
-  const totalVotes = votes?.reduce((sum, v) => sum + v.votes, 0) ?? 0;
+  const totalVotes = votes?.filter(v => {
+    const candidate = constituency.candidates.find(c => c.id === v.candidateId);
+    return candidate?.partyId !== "shahid";
+  }).reduce((sum, v) => sum + v.votes, 0) ?? 0;
 
   return (
     <div className="space-y-6">
@@ -211,17 +265,21 @@ function ConstituencyDetail({ constituency, onBack }: ConstituencyDetailProps) {
       {hasVoted && chartData.length > 0 && (
         <Card className="p-4">
           <h3 className="text-sm font-medium mb-4 text-muted-foreground">Vote Distribution</h3>
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-              <XAxis 
+          <ResponsiveContainer width="100%" height={Math.max(200, chartData.length * 60)}>
+            <BarChart 
+              data={chartData} 
+              layout="vertical"
+              margin={{ top: 5, right: 80, left: 10, bottom: 5 }}
+            >
+              <XAxis type="number" hide />
+              <YAxis 
+                type="category"
                 dataKey="party" 
                 tick={{ fontSize: 11 }}
                 className="fill-muted-foreground"
-              />
-              <YAxis 
-                tick={{ fontSize: 11 }}
-                className="fill-muted-foreground"
+                width={100}
+                tickLine={false}
+                axisLine={false}
               />
               <Tooltip 
                 contentStyle={{ 
@@ -230,17 +288,25 @@ function ConstituencyDetail({ constituency, onBack }: ConstituencyDetailProps) {
                   borderRadius: "6px",
                   fontSize: "12px"
                 }}
-                labelStyle={{ fontWeight: 600 }}
+                formatter={(value: number) => [`${value.toLocaleString()} votes`, "Votes"]}
+                labelFormatter={(label) => chartData.find(d => d.party === label)?.fullName ?? label}
               />
-              <Line 
-                type="monotone" 
+              <Bar 
                 dataKey="votes" 
-                stroke="hsl(var(--primary))" 
-                strokeWidth={2}
-                dot={{ fill: "hsl(var(--primary))", strokeWidth: 2, r: 4 }}
-                activeDot={{ r: 6, fill: "hsl(var(--primary))" }}
-              />
-            </LineChart>
+                radius={[0, 4, 4, 0]}
+                maxBarSize={40}
+              >
+                {chartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+                <LabelList 
+                  dataKey="votes" 
+                  position="right" 
+                  formatter={(value: number) => `${value.toLocaleString()}`}
+                  className="fill-foreground text-xs"
+                />
+              </Bar>
+            </BarChart>
           </ResponsiveContainer>
         </Card>
       )}

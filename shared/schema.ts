@@ -102,6 +102,17 @@ export const politicalParties = [
     founded: 0,
     description: "Independent candidates and smaller parties"
   },
+  { 
+    id: "shahid", 
+    name: "Shahid (Martyr)", 
+    shortName: "Shahid", 
+    color: "#FFD700",
+    symbol: "star",
+    nominations: 0,
+    status: "martyr",
+    founded: 0,
+    description: "In memory of the martyrs of July 2024 uprising"
+  },
 ] as const;
 
 export type PoliticalParty = typeof politicalParties[number];
@@ -330,6 +341,7 @@ export const constituencies: Constituency[] = [
       { id: "d8-ncp", name: "Farhan Ahmed", nameBn: "ফারহান আহমেদ", partyId: "ncp" },
       { id: "d8-jamaat", name: "Dr. Nurul Islam", nameBn: "ডা. নুরুল ইসলাম", partyId: "jamaat" },
       { id: "d8-ind", name: "Advocate Rahim", nameBn: "এডভোকেট রহিম", partyId: "others" },
+      { id: "d8-shahid", name: "Shohid Shorif Usman Hadi", nameBn: "শহীদ শরীফ উসমান হাদী", partyId: "shahid", profession: "Martyr" },
     ]
   },
   {
@@ -343,7 +355,7 @@ export const constituencies: Constituency[] = [
     areasBn: ["উত্তরা", "এয়ারপোর্ট", "দিয়াবারী", "রনাভোলা"],
     totalVoters: 298000,
     candidates: [
-      { id: "d9-ncp", name: "Tasnim Jara", nameBn: "তাসনিম জারা", partyId: "ncp", profession: "Student Activist" },
+      { id: "d9-tasnim", name: "Dr. Tasnim Jara", nameBn: "ডা. তাসনিম জারা", partyId: "others", profession: "Independent Candidate" },
       { id: "d9-bnp", name: "Habibur Rashid Habib", nameBn: "হাবিবুর রশিদ হাবিব", partyId: "bnp" },
       { id: "d9-jamaat", name: "Kabir Ahmed", nameBn: "কবির আহমেদ", partyId: "jamaat" },
     ]
