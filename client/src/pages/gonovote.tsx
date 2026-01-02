@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -138,6 +138,8 @@ function CountdownTimer({ targetDate }: { targetDate: string }) {
 
 export default function GonovotePage() {
   const { toast } = useToast();
+  const voteCardRef = useRef<HTMLDivElement>(null);
+  const [showStickyButton, setShowStickyButton] = useState(true);
 
   const { data: result, isLoading } = useQuery<GonovoteResult>({
     queryKey: ["/api/gonovote/result"],
@@ -167,6 +169,25 @@ export default function GonovotePage() {
       });
     },
   });
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setShowStickyButton(!entry.isIntersecting);
+      },
+      { threshold: 0.3 }
+    );
+
+    if (voteCardRef.current) {
+      observer.observe(voteCardRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
+  const scrollToVote = () => {
+    voteCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
 
   const hasVoted = voteStatus?.hasVoted ?? false;
   const userVote = voteStatus?.vote;
@@ -294,7 +315,7 @@ export default function GonovotePage() {
             ))}
           </div>
 
-          <Card className="bg-gradient-to-br from-[#006A4E]/5 to-[#F42A41]/5 border-2">
+          <Card ref={voteCardRef} className="bg-gradient-to-br from-[#006A4E]/5 to-[#F42A41]/5 border-2">
             <CardHeader>
               <CardTitle className="text-center text-lg sm:text-xl">
                 আপনার মতামত দিন / Cast Your Vote
@@ -361,6 +382,22 @@ export default function GonovotePage() {
           </p>
         </div>
       </section>
+
+      {showStickyButton && !hasVoted && (
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-background via-background to-transparent z-50">
+          <div className="max-w-md mx-auto">
+            <Button
+              size="lg"
+              className="w-full bg-[#006A4E] hover:bg-[#005540] text-white font-bold text-base gap-2 shadow-lg"
+              onClick={scrollToVote}
+              data-testid="button-scroll-to-vote"
+            >
+              <ChevronDown className="h-5 w-5 animate-bounce" />
+              ভোট দিতে নিচে যান / Scroll to Vote
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
