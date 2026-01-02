@@ -18,6 +18,7 @@ import SubmitCasePage from "@/pages/submit-case";
 import ReportScammerPage from "@/pages/report-scammer";
 import CreatePollPage from "@/pages/create-poll";
 import NewsPage from "@/pages/news";
+import NewsArticlePage from "@/pages/news-article";
 import AdminLogin from "@/pages/admin-login";
 import AdminDashboard from "@/pages/admin-dashboard";
 import GonovotePage from "@/pages/gonovote";
@@ -36,6 +37,7 @@ function Router() {
       <Route path="/report-scammer" component={ReportScammerPage} />
       <Route path="/create-poll" component={CreatePollPage} />
       <Route path="/news" component={NewsPage} />
+      <Route path="/news/:id" component={NewsArticlePage} />
       <Route path="/glen20/login" component={AdminLogin} />
       <Route path="/glen20/dashboard" component={AdminDashboard} />
       <Route path="/gonovote" component={GonovotePage} />
