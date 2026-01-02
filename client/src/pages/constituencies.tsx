@@ -208,7 +208,10 @@ function ConstituencyDetail({ constituency, onBack }: ConstituencyDetailProps) {
   }).reduce((sum, v) => sum + v.votes, 0) ?? 0;
 
   const handleShare = async () => {
-    if (!shareRef.current) return;
+    if (!shareRef.current) {
+      toast({ title: "Nothing to share yet", variant: "destructive" });
+      return;
+    }
     setIsSharing(true);
     
     try {
@@ -216,6 +219,7 @@ function ConstituencyDetail({ constituency, onBack }: ConstituencyDetailProps) {
         scale: 2,
         useCORS: true,
         backgroundColor: "#ffffff",
+        logging: false,
       });
       
       const blob = await new Promise<Blob | null>((resolve) => {
@@ -230,12 +234,26 @@ function ConstituencyDetail({ constituency, onBack }: ConstituencyDetailProps) {
       const file = new File([blob], `changebd-${constituency.code}.png`, { type: "image/png" });
       
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: `${constituency.code} - Vote Results`,
-          text: `Check out the voting results for ${constituency.code} on ChangeBD.org!`,
-        });
-        toast({ title: "Shared successfully!" });
+        try {
+          await navigator.share({
+            files: [file],
+            title: `${constituency.code} - Vote Results`,
+            text: `Check out the voting results for ${constituency.code} on ChangeBD.org!`,
+          });
+          toast({ title: "Shared successfully!" });
+        } catch (shareError: any) {
+          if (shareError?.name !== "AbortError") {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `changebd-${constituency.code}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            toast({ title: "Image downloaded!" });
+          }
+        }
       } else {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
@@ -248,9 +266,8 @@ function ConstituencyDetail({ constituency, onBack }: ConstituencyDetailProps) {
         toast({ title: "Image downloaded!" });
       }
     } catch (error: any) {
-      if (error?.name !== "AbortError") {
-        toast({ title: "Failed to share", variant: "destructive" });
-      }
+      console.error("Share error:", error);
+      toast({ title: "Failed to share", variant: "destructive" });
     } finally {
       setIsSharing(false);
     }
