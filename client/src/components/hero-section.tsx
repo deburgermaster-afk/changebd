@@ -1,7 +1,8 @@
 import { Link } from "wouter";
-import { Shield, TrendingUp, Users, FileText } from "lucide-react";
+import { Shield, TrendingUp, Users, FileText, Vote, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import type { PlatformStats } from "@shared/schema";
 
 interface HeroSectionProps {
@@ -37,7 +38,7 @@ export function HeroSection({ stats }: HeroSectionProps) {
             <span>Fully Anonymous & Encrypted</span>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-8 sm:mb-12">
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-6">
             <Link href="/submit">
               <Button size="default" className="sm:h-11 sm:px-6" data-testid="button-hero-raise-voice">
                 Raise Your Voice
@@ -49,6 +50,22 @@ export function HeroSection({ stats }: HeroSectionProps) {
               </Button>
             </Link>
           </div>
+
+          <Link href="/gonovote">
+            <div className="inline-flex items-center gap-3 px-4 sm:px-6 py-3 mb-8 sm:mb-12 rounded-md bg-gradient-to-r from-[#006A4E] to-[#008060] border border-[#006A4E]/50 shadow-lg hover-elevate cursor-pointer" data-testid="button-gonovote-banner">
+              <Vote className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+              <div className="text-left">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-white font-bold text-sm sm:text-base">গণভোট ২০২৬</span>
+                  <Badge variant="secondary" className="text-xs bg-white/20 text-white border-0">
+                    LIVE
+                  </Badge>
+                </div>
+                <span className="text-white/80 text-xs sm:text-sm">Constitutional Reform Referendum</span>
+              </div>
+              <ArrowRight className="h-5 w-5 text-white/80 ml-2" />
+            </div>
+          </Link>
 
           <div className="grid grid-cols-3 gap-2 sm:gap-4 max-w-lg mx-auto">
             <Card className="p-2 sm:p-4 text-center">
