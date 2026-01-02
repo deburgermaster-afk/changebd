@@ -65,7 +65,7 @@ export interface IStorage {
   getConstituencies(): Promise<Constituency[]>;
   getConstituency(id: string): Promise<Constituency | undefined>;
   getConstituencyVotes(constituencyId: string): Promise<ConstituencyVoteResult[]>;
-  voteOnConstituency(constituencyId: string, candidateId: string, ipHash: string): Promise<boolean>;
+  voteOnConstituency(constituencyId: string, candidateId: string, ipHash: string): Promise<{ success: boolean; error?: string }>;
   getConstituencyVoteStatus(ipHash: string): Promise<Record<string, string>>;
   
   getPendingCases(): Promise<PendingCase[]>;
@@ -381,23 +381,27 @@ export class DatabaseStorage implements IStorage {
     }));
   }
 
-  async voteOnConstituency(constituencyId: string, candidateId: string, ipHash: string): Promise<boolean> {
-    const existing = await db.select().from(constituencyVotesTable)
-      .where(and(
-        eq(constituencyVotesTable.constituencyId, constituencyId),
-        eq(constituencyVotesTable.ipHash, ipHash)
-      ));
+  async voteOnConstituency(constituencyId: string, candidateId: string, ipHash: string): Promise<{ success: boolean; error?: string }> {
+    // Check if user has already voted in ANY constituency (one vote per user across all areas)
+    const existingAnyVote = await db.select().from(constituencyVotesTable)
+      .where(eq(constituencyVotesTable.ipHash, ipHash));
     
-    if (existing.length > 0) return false;
+    if (existingAnyVote.length > 0) {
+      const votedConstituency = constituencies.find(c => c.id === existingAnyVote[0].constituencyId);
+      return { 
+        success: false, 
+        error: `আপনি ইতিমধ্যে ${votedConstituency?.nameBn || existingAnyVote[0].constituencyId} এ ভোট দিয়েছেন। You have already voted in ${votedConstituency?.name || existingAnyVote[0].constituencyId}.` 
+      };
+    }
 
     const constituency = constituencies.find(c => c.id === constituencyId);
-    if (!constituency) return false;
+    if (!constituency) return { success: false, error: "Constituency not found" };
 
     const candidate = constituency.candidates.find(c => c.id === candidateId);
-    if (!candidate) return false;
+    if (!candidate) return { success: false, error: "Candidate not found" };
 
     await db.insert(constituencyVotesTable).values({ constituencyId, candidateId, ipHash });
-    return true;
+    return { success: true };
   }
 
   async getConstituencyVoteStatus(ipHash: string): Promise<Record<string, string>> {

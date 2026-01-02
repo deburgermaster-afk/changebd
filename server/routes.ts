@@ -246,10 +246,10 @@ export async function registerRoutes(
       const ipHash = getIPHash(req);
       const { candidateId } = insertConstituencyVoteSchema.omit({ constituencyId: true }).parse(req.body);
       console.log(`[Constituency Vote] IP hash: ${ipHash.substring(0, 8)}... constituency: ${req.params.id}, candidate: ${candidateId}`);
-      const success = await storage.voteOnConstituency(req.params.id, candidateId, ipHash);
-      if (!success) {
-        console.log(`[Constituency Vote] DENIED - IP hash ${ipHash.substring(0, 8)}... already voted in ${req.params.id}`);
-        return res.status(400).json({ error: "Already voted or candidate not found" });
+      const result = await storage.voteOnConstituency(req.params.id, candidateId, ipHash);
+      if (!result.success) {
+        console.log(`[Constituency Vote] DENIED - IP hash ${ipHash.substring(0, 8)}... ${result.error}`);
+        return res.status(400).json({ error: result.error || "Already voted in another constituency" });
       }
       console.log(`[Constituency Vote] SUCCESS - IP hash ${ipHash.substring(0, 8)}... voted in ${req.params.id}`);
       res.json({ success: true });
