@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertCaseSchema, insertPollSchema, insertScammerSchema, insertCaseVoteSchema, insertPollVoteSchema, insertPartyVoteSchema } from "@shared/schema";
+import { insertCaseSchema, insertPollSchema, insertScammerSchema, insertCaseVoteSchema, insertPollVoteSchema, insertPartyVoteSchema, insertConstituencyVoteSchema } from "@shared/schema";
 import { z } from "zod";
 
 import type { Request } from "express";
@@ -175,6 +175,64 @@ export async function registerRoutes(
       const success = await storage.voteOnParty(partyId, sessionId);
       if (!success) {
         return res.status(400).json({ error: "Already voted or party not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid data", details: error.errors });
+      }
+      res.status(500).json({ error: "Failed to vote" });
+    }
+  });
+
+  // Constituency/MP Voting Routes
+  app.get("/api/constituencies", async (req, res) => {
+    try {
+      const constituencies = await storage.getConstituencies();
+      res.json(constituencies);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch constituencies" });
+    }
+  });
+
+  app.get("/api/constituency-vote-status", async (req, res) => {
+    try {
+      const sessionId = getSessionId(req);
+      const status = await storage.getConstituencyVoteStatus(sessionId);
+      res.json(status);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch vote status" });
+    }
+  });
+
+  app.get("/api/constituencies/:id", async (req, res) => {
+    try {
+      const constituency = await storage.getConstituency(req.params.id);
+      if (!constituency) {
+        return res.status(404).json({ error: "Constituency not found" });
+      }
+      res.json(constituency);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch constituency" });
+    }
+  });
+
+  app.get("/api/constituencies/:id/votes", async (req, res) => {
+    try {
+      const votes = await storage.getConstituencyVotes(req.params.id);
+      res.json(votes);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch constituency votes" });
+    }
+  });
+
+  app.post("/api/constituencies/:id/vote", async (req, res) => {
+    try {
+      const sessionId = getSessionId(req);
+      const { candidateId } = insertConstituencyVoteSchema.omit({ constituencyId: true }).parse(req.body);
+      const success = await storage.voteOnConstituency(req.params.id, candidateId, sessionId);
+      if (!success) {
+        return res.status(400).json({ error: "Already voted or candidate not found" });
       }
       res.json({ success: true });
     } catch (error) {

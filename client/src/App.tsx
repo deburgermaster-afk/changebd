@@ -11,6 +11,7 @@ import HomePage from "@/pages/home";
 import CasesPage from "@/pages/cases";
 import VotePage from "@/pages/vote";
 import PartiesPage from "@/pages/parties";
+import ConstituenciesPage from "@/pages/constituencies";
 import LeaderboardPage from "@/pages/leaderboard-page";
 import ScammersPage from "@/pages/scammers";
 import SubmitCasePage from "@/pages/submit-case";
@@ -24,6 +25,7 @@ function Router() {
       <Route path="/cases" component={CasesPage} />
       <Route path="/vote" component={VotePage} />
       <Route path="/parties" component={PartiesPage} />
+      <Route path="/constituencies" component={ConstituenciesPage} />
       <Route path="/leaderboard" component={LeaderboardPage} />
       <Route path="/scammers" component={ScammersPage} />
       <Route path="/submit" component={SubmitCasePage} />

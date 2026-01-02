@@ -10,8 +10,9 @@ const navItems = [
   { href: "/cases", label: "Cases" },
   { href: "/vote", label: "Vote" },
   { href: "/parties", label: "Parties" },
+  { href: "/constituencies", label: "MPs" },
   { href: "/leaderboard", label: "Leaderboard" },
-  { href: "/scammers", label: "Report Scammer" },
+  { href: "/scammers", label: "Scammers" },
 ];
 
 export function Navigation() {

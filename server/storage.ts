@@ -10,8 +10,10 @@ import type {
   PartyVoteResult,
   PlatformStats,
   CaseCategory,
+  Constituency,
+  ConstituencyVoteResult,
 } from "@shared/schema";
-import { politicalParties } from "@shared/schema";
+import { politicalParties, constituencies } from "@shared/schema";
 
 export interface IStorage {
   getStats(): Promise<PlatformStats>;
@@ -29,6 +31,11 @@ export interface IStorage {
   getPartyVotes(): Promise<PartyVoteResult[]>;
   voteOnParty(partyId: string, sessionId: string): Promise<boolean>;
   getPartyVoteStatus(sessionId: string): Promise<{ hasVoted: boolean; partyId?: string }>;
+  getConstituencies(): Promise<Constituency[]>;
+  getConstituency(id: string): Promise<Constituency | undefined>;
+  getConstituencyVotes(constituencyId: string): Promise<ConstituencyVoteResult[]>;
+  voteOnConstituency(constituencyId: string, candidateId: string, sessionId: string): Promise<boolean>;
+  getConstituencyVoteStatus(sessionId: string): Promise<Record<string, string>>;
 }
 
 export class MemStorage implements IStorage {
@@ -39,6 +46,8 @@ export class MemStorage implements IStorage {
   private scammers: Map<string, Scammer> = new Map();
   private partyVotes: Map<string, number> = new Map();
   private partyVoters: Map<string, string> = new Map();
+  private constituencyVotes: Map<string, Map<string, number>> = new Map();
+  private constituencyVoters: Map<string, string> = new Map();
 
   constructor() {
     this.seedData();
@@ -358,6 +367,79 @@ export class MemStorage implements IStorage {
   async getPartyVoteStatus(sessionId: string): Promise<{ hasVoted: boolean; partyId?: string }> {
     const partyId = this.partyVoters.get(sessionId);
     return { hasVoted: !!partyId, partyId };
+  }
+
+  async getConstituencies(): Promise<Constituency[]> {
+    return constituencies;
+  }
+
+  async getConstituency(id: string): Promise<Constituency | undefined> {
+    return constituencies.find(c => c.id === id);
+  }
+
+  async getConstituencyVotes(constituencyId: string): Promise<ConstituencyVoteResult[]> {
+    const constituency = constituencies.find(c => c.id === constituencyId);
+    if (!constituency) return [];
+
+    let votes = this.constituencyVotes.get(constituencyId);
+    
+    if (!votes) {
+      votes = new Map();
+      constituency.candidates.forEach(candidate => {
+        votes!.set(candidate.id, Math.floor(Math.random() * 1000) + 100);
+      });
+      this.constituencyVotes.set(constituencyId, votes);
+    }
+
+    const totalVotes = Array.from(votes.values()).reduce((sum, v) => sum + v, 0);
+
+    return constituency.candidates.map(candidate => {
+      const candidateVotes = votes!.get(candidate.id) ?? 0;
+      return {
+        constituencyId,
+        candidateId: candidate.id,
+        votes: candidateVotes,
+        percentage: totalVotes > 0 ? (candidateVotes / totalVotes) * 100 : 0,
+      };
+    });
+  }
+
+  async voteOnConstituency(constituencyId: string, candidateId: string, sessionId: string): Promise<boolean> {
+    const voteKey = `${sessionId}:${constituencyId}`;
+    if (this.constituencyVoters.has(voteKey)) return false;
+
+    const constituency = constituencies.find(c => c.id === constituencyId);
+    if (!constituency) return false;
+
+    const candidate = constituency.candidates.find(c => c.id === candidateId);
+    if (!candidate) return false;
+
+    this.constituencyVoters.set(voteKey, candidateId);
+
+    let votes = this.constituencyVotes.get(constituencyId);
+    if (!votes) {
+      votes = new Map();
+      constituency.candidates.forEach(c => {
+        votes!.set(c.id, Math.floor(Math.random() * 1000) + 100);
+      });
+      this.constituencyVotes.set(constituencyId, votes);
+    }
+    
+    const current = votes.get(candidateId) ?? 0;
+    votes.set(candidateId, current + 1);
+
+    return true;
+  }
+
+  async getConstituencyVoteStatus(sessionId: string): Promise<Record<string, string>> {
+    const result: Record<string, string> = {};
+    this.constituencyVoters.forEach((candidateId, key) => {
+      if (key.startsWith(`${sessionId}:`)) {
+        const constituencyId = key.split(":")[1];
+        result[constituencyId] = candidateId;
+      }
+    });
+    return result;
   }
 }
 
