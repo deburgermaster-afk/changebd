@@ -1,37 +1,363 @@
-import { type User, type InsertUser } from "@shared/schema";
 import { randomUUID } from "crypto";
-
-// modify the interface with any CRUD methods
-// you might need
+import type {
+  Case,
+  InsertCase,
+  Poll,
+  InsertPoll,
+  PollOption,
+  Scammer,
+  InsertScammer,
+  PartyVoteResult,
+  PlatformStats,
+  CaseCategory,
+} from "@shared/schema";
+import { politicalParties } from "@shared/schema";
 
 export interface IStorage {
-  getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  getStats(): Promise<PlatformStats>;
+  getCases(): Promise<Case[]>;
+  getCase(id: string): Promise<Case | undefined>;
+  createCase(data: InsertCase): Promise<Case>;
+  voteOnCase(caseId: string, sessionId: string, direction: "up" | "down"): Promise<boolean>;
+  getPolls(): Promise<Poll[]>;
+  getPoll(id: string): Promise<Poll | undefined>;
+  createPoll(data: InsertPoll): Promise<Poll>;
+  voteOnPoll(pollId: string, optionId: string, sessionId: string): Promise<boolean>;
+  getPollVoteStatus(sessionId: string): Promise<Record<string, string>>;
+  getScammers(): Promise<Scammer[]>;
+  createScammer(data: InsertScammer): Promise<Scammer>;
+  getPartyVotes(): Promise<PartyVoteResult[]>;
+  voteOnParty(partyId: string, sessionId: string): Promise<boolean>;
+  getPartyVoteStatus(sessionId: string): Promise<{ hasVoted: boolean; partyId?: string }>;
 }
 
 export class MemStorage implements IStorage {
-  private users: Map<string, User>;
+  private cases: Map<string, Case> = new Map();
+  private caseVotes: Map<string, Set<string>> = new Map();
+  private polls: Map<string, Poll> = new Map();
+  private pollVotes: Map<string, Map<string, string>> = new Map();
+  private scammers: Map<string, Scammer> = new Map();
+  private partyVotes: Map<string, number> = new Map();
+  private partyVoters: Map<string, string> = new Map();
 
   constructor() {
-    this.users = new Map();
+    this.seedData();
   }
 
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+  private seedData() {
+    const sampleCases: Omit<Case, "id">[] = [
+      {
+        title: "Demand for Clean Drinking Water in Rural Sylhet",
+        description: "Many villages in rural Sylhet are suffering from a severe shortage of clean drinking water. The existing tube wells have been contaminated with arsenic, and the government has failed to provide alternative sources. We demand immediate action to ensure safe drinking water for all residents.",
+        category: "infrastructure",
+        votes: 1247,
+        comments: 89,
+        createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+        trending: true,
+        evidence: [],
+      },
+      {
+        title: "Stop Illegal Deforestation in Sundarbans Buffer Zone",
+        description: "Illegal logging operations are destroying the buffer zone of the Sundarbans, the world's largest mangrove forest. This is threatening wildlife habitats and increasing vulnerability to cyclones. We call for strict enforcement of forest protection laws.",
+        category: "environment",
+        votes: 892,
+        comments: 56,
+        createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+        trending: true,
+        evidence: [],
+      },
+      {
+        title: "Investigate Corruption in Road Construction Projects",
+        description: "Multiple road construction projects in Dhaka have been delayed and over budget due to alleged corruption. Poor quality materials are being used, leading to roads deteriorating within months. We demand a transparent investigation and accountability.",
+        category: "political",
+        votes: 2341,
+        comments: 234,
+        createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+        trending: true,
+        evidence: [],
+      },
+      {
+        title: "Improve Access to Healthcare in Chittagong Hill Tracts",
+        description: "Indigenous communities in the Chittagong Hill Tracts lack basic healthcare facilities. The nearest hospital is often hours away, and mobile health clinics are rare. We need permanent healthcare infrastructure and trained medical staff.",
+        category: "healthcare",
+        votes: 678,
+        comments: 42,
+        createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+        trending: false,
+        evidence: [],
+      },
+      {
+        title: "Reform University Admission Process",
+        description: "The current university admission system is chaotic and unfair. Students have to travel across the country for multiple exams. We propose a unified admission test system that reduces stress and travel costs for students and their families.",
+        category: "education",
+        votes: 1567,
+        comments: 128,
+        createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+        trending: true,
+        evidence: [],
+      },
+      {
+        title: "Protect Street Vendors from Eviction",
+        description: "Street vendors are an essential part of Bangladesh's economy, providing affordable goods and services. Recent eviction drives have destroyed livelihoods without providing alternatives. We demand fair treatment and designated vending zones.",
+        category: "social",
+        votes: 445,
+        comments: 31,
+        createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+        trending: false,
+        evidence: [],
+      },
+    ];
+
+    sampleCases.forEach((c) => {
+      const id = randomUUID();
+      this.cases.set(id, { ...c, id });
+    });
+
+    const samplePolls: Omit<Poll, "id">[] = [
+      {
+        question: "Should Bangladesh implement a carbon tax to fight climate change?",
+        options: [
+          { id: randomUUID(), text: "Yes, immediately", votes: 234, percentage: 45.2 },
+          { id: randomUUID(), text: "Yes, but gradually", votes: 189, percentage: 36.5 },
+          { id: randomUUID(), text: "No, it will hurt the economy", votes: 67, percentage: 12.9 },
+          { id: randomUUID(), text: "Not sure", votes: 28, percentage: 5.4 },
+        ],
+        totalVotes: 518,
+        expiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+        active: true,
+      },
+      {
+        question: "What is the biggest challenge facing Bangladesh today?",
+        options: [
+          { id: randomUUID(), text: "Corruption", votes: 412, percentage: 38.1 },
+          { id: randomUUID(), text: "Climate change", votes: 287, percentage: 26.5 },
+          { id: randomUUID(), text: "Education quality", votes: 198, percentage: 18.3 },
+          { id: randomUUID(), text: "Healthcare access", votes: 121, percentage: 11.2 },
+          { id: randomUUID(), text: "Infrastructure", votes: 64, percentage: 5.9 },
+        ],
+        totalVotes: 1082,
+        expiresAt: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+        active: true,
+      },
+    ];
+
+    samplePolls.forEach((p) => {
+      const id = randomUUID();
+      this.polls.set(id, { ...p, id });
+    });
+
+    const sampleScammers: Omit<Scammer, "id">[] = [
+      {
+        name: "Fake Import-Export Company Ltd",
+        type: "business",
+        description: "This company promises to facilitate import-export deals but takes advance payments and never delivers. Multiple victims have reported losses of 50,000-500,000 BDT.",
+        evidenceCount: 12,
+        verified: true,
+        reportedAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+      },
+      {
+        name: "Online Job Scam Network",
+        type: "organization",
+        description: "A network of fake job posting websites that collect registration fees promising overseas employment. They use fake documents and official-looking websites to deceive job seekers.",
+        evidenceCount: 8,
+        verified: true,
+        reportedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+      },
+      {
+        name: "Md. Rahman (Alias: Online Trader)",
+        type: "individual",
+        description: "Operates multiple social media accounts selling electronics at suspiciously low prices. Takes payment via bKash but never delivers products. Changes numbers frequently.",
+        evidenceCount: 5,
+        verified: false,
+        reportedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+      },
+    ];
+
+    sampleScammers.forEach((s) => {
+      const id = randomUUID();
+      this.scammers.set(id, { ...s, id });
+    });
+
+    politicalParties.forEach((party) => {
+      this.partyVotes.set(party.id, Math.floor(Math.random() * 500) + 100);
+    });
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
+  async getStats(): Promise<PlatformStats> {
+    const totalVotes = Array.from(this.cases.values()).reduce((sum, c) => sum + c.votes, 0) +
+      Array.from(this.polls.values()).reduce((sum, p) => sum + p.totalVotes, 0) +
+      Array.from(this.partyVotes.values()).reduce((sum, v) => sum + v, 0);
+    
+    return {
+      activeCases: this.cases.size,
+      totalVotes,
+      verifiedReports: Array.from(this.scammers.values()).filter(s => s.verified).length,
+    };
+  }
+
+  async getCases(): Promise<Case[]> {
+    return Array.from(this.cases.values()).sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
+  async getCase(id: string): Promise<Case | undefined> {
+    return this.cases.get(id);
+  }
+
+  async createCase(data: InsertCase): Promise<Case> {
     const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+    const newCase: Case = {
+      id,
+      title: data.title,
+      description: data.description,
+      category: data.category,
+      votes: 0,
+      comments: 0,
+      createdAt: new Date().toISOString(),
+      trending: false,
+      evidence: data.evidence ?? [],
+    };
+    this.cases.set(id, newCase);
+    return newCase;
+  }
+
+  async voteOnCase(caseId: string, sessionId: string, direction: "up" | "down"): Promise<boolean> {
+    const caseItem = this.cases.get(caseId);
+    if (!caseItem) return false;
+
+    const voters = this.caseVotes.get(caseId) ?? new Set();
+    if (voters.has(sessionId)) return false;
+
+    voters.add(sessionId);
+    this.caseVotes.set(caseId, voters);
+
+    caseItem.votes += direction === "up" ? 1 : -1;
+    if (caseItem.votes > 500) caseItem.trending = true;
+    this.cases.set(caseId, caseItem);
+
+    return true;
+  }
+
+  async getPolls(): Promise<Poll[]> {
+    const now = new Date();
+    return Array.from(this.polls.values()).map((poll) => {
+      const isActive = new Date(poll.expiresAt) > now;
+      return { ...poll, active: isActive };
+    }).sort((a, b) => {
+      if (a.active !== b.active) return a.active ? -1 : 1;
+      return new Date(b.expiresAt).getTime() - new Date(a.expiresAt).getTime();
+    });
+  }
+
+  async getPoll(id: string): Promise<Poll | undefined> {
+    return this.polls.get(id);
+  }
+
+  async createPoll(data: InsertPoll): Promise<Poll> {
+    const id = randomUUID();
+    const options: PollOption[] = data.options.map((text) => ({
+      id: randomUUID(),
+      text,
+      votes: 0,
+      percentage: 0,
+    }));
+
+    const poll: Poll = {
+      id,
+      question: data.question,
+      options,
+      totalVotes: 0,
+      expiresAt: new Date(Date.now() + data.expiresInHours * 60 * 60 * 1000).toISOString(),
+      active: true,
+    };
+    this.polls.set(id, poll);
+    return poll;
+  }
+
+  async voteOnPoll(pollId: string, optionId: string, sessionId: string): Promise<boolean> {
+    const poll = this.polls.get(pollId);
+    if (!poll || !poll.active) return false;
+
+    const pollVoters = this.pollVotes.get(pollId) ?? new Map();
+    if (pollVoters.has(sessionId)) return false;
+
+    const option = poll.options.find((o) => o.id === optionId);
+    if (!option) return false;
+
+    pollVoters.set(sessionId, optionId);
+    this.pollVotes.set(pollId, pollVoters);
+
+    option.votes += 1;
+    poll.totalVotes += 1;
+
+    poll.options.forEach((o) => {
+      o.percentage = poll.totalVotes > 0 ? (o.votes / poll.totalVotes) * 100 : 0;
+    });
+
+    this.polls.set(pollId, poll);
+    return true;
+  }
+
+  async getPollVoteStatus(sessionId: string): Promise<Record<string, string>> {
+    const result: Record<string, string> = {};
+    this.pollVotes.forEach((voters, pollId) => {
+      const optionId = voters.get(sessionId);
+      if (optionId) {
+        result[pollId] = optionId;
+      }
+    });
+    return result;
+  }
+
+  async getScammers(): Promise<Scammer[]> {
+    return Array.from(this.scammers.values()).sort(
+      (a, b) => new Date(b.reportedAt).getTime() - new Date(a.reportedAt).getTime()
+    );
+  }
+
+  async createScammer(data: InsertScammer): Promise<Scammer> {
+    const id = randomUUID();
+    const scammer: Scammer = {
+      id,
+      name: data.name,
+      type: data.type,
+      description: data.description,
+      evidenceCount: data.evidence?.length ?? 0,
+      verified: false,
+      reportedAt: new Date().toISOString(),
+    };
+    this.scammers.set(id, scammer);
+    return scammer;
+  }
+
+  async getPartyVotes(): Promise<PartyVoteResult[]> {
+    const total = Array.from(this.partyVotes.values()).reduce((sum, v) => sum + v, 0);
+    return politicalParties.map((party) => {
+      const votes = this.partyVotes.get(party.id) ?? 0;
+      return {
+        partyId: party.id,
+        votes,
+        percentage: total > 0 ? (votes / total) * 100 : 0,
+      };
+    });
+  }
+
+  async voteOnParty(partyId: string, sessionId: string): Promise<boolean> {
+    if (this.partyVoters.has(sessionId)) return false;
+    
+    const party = politicalParties.find((p) => p.id === partyId);
+    if (!party) return false;
+
+    this.partyVoters.set(sessionId, partyId);
+    const current = this.partyVotes.get(partyId) ?? 0;
+    this.partyVotes.set(partyId, current + 1);
+    return true;
+  }
+
+  async getPartyVoteStatus(sessionId: string): Promise<{ hasVoted: boolean; partyId?: string }> {
+    const partyId = this.partyVoters.get(sessionId);
+    return { hasVoted: !!partyId, partyId };
   }
 }
 
