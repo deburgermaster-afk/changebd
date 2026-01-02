@@ -233,7 +233,15 @@ function ConstituencyDetail({ constituency, onBack }: ConstituencyDetailProps) {
         });
         toast({ title: "Shared successfully!" });
       } else {
-        toast({ title: "Sharing not supported on this device", variant: "destructive" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `changebd-${constituency.code}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        toast({ title: "Image downloaded!" });
       }
     } catch (error: any) {
       if (error?.name !== "AbortError") {
