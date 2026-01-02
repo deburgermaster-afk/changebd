@@ -12,6 +12,12 @@ import type {
   CaseCategory,
   Constituency,
   ConstituencyVoteResult,
+  PendingCase,
+  PendingScammer,
+  News,
+  InsertNews,
+  NewsComment,
+  ContentStatus,
 } from "@shared/schema";
 import { politicalParties, constituencies } from "@shared/schema";
 
@@ -36,18 +42,36 @@ export interface IStorage {
   getConstituencyVotes(constituencyId: string): Promise<ConstituencyVoteResult[]>;
   voteOnConstituency(constituencyId: string, candidateId: string, sessionId: string): Promise<boolean>;
   getConstituencyVoteStatus(sessionId: string): Promise<Record<string, string>>;
+  
+  // Admin: Pending content
+  getPendingCases(): Promise<PendingCase[]>;
+  updateCaseStatus(caseId: string, status: ContentStatus): Promise<boolean>;
+  getPendingScammers(): Promise<PendingScammer[]>;
+  updateScammerStatus(scammerId: string, status: ContentStatus): Promise<boolean>;
+  
+  // News
+  getNews(): Promise<News[]>;
+  getNewsItem(id: string): Promise<News | undefined>;
+  createNews(data: InsertNews): Promise<News>;
+  updateNewsStatus(newsId: string, status: ContentStatus): Promise<boolean>;
+  likeNews(newsId: string, sessionId: string): Promise<boolean>;
+  addNewsComment(newsId: string, content: string, sessionId: string): Promise<NewsComment | null>;
 }
 
 export class MemStorage implements IStorage {
   private cases: Map<string, Case> = new Map();
+  private caseStatuses: Map<string, ContentStatus> = new Map();
   private caseVotes: Map<string, Set<string>> = new Map();
   private polls: Map<string, Poll> = new Map();
   private pollVotes: Map<string, Map<string, string>> = new Map();
   private scammers: Map<string, Scammer> = new Map();
+  private scammerStatuses: Map<string, ContentStatus> = new Map();
   private partyVotes: Map<string, number> = new Map();
   private partyVoters: Map<string, string> = new Map();
   private constituencyVotes: Map<string, Map<string, number>> = new Map();
   private constituencyVoters: Map<string, string> = new Map();
+  private news: Map<string, News> = new Map();
+  private newsLikes: Map<string, Set<string>> = new Map();
 
   constructor() {
     this.seedData();
@@ -440,6 +464,106 @@ export class MemStorage implements IStorage {
       }
     });
     return result;
+  }
+
+  // Admin: Pending content
+  async getPendingCases(): Promise<PendingCase[]> {
+    return Array.from(this.cases.values()).map(c => ({
+      ...c,
+      status: this.caseStatuses.get(c.id) ?? "pending",
+    }));
+  }
+
+  async updateCaseStatus(caseId: string, status: ContentStatus): Promise<boolean> {
+    if (!this.cases.has(caseId)) return false;
+    this.caseStatuses.set(caseId, status);
+    return true;
+  }
+
+  async getPendingScammers(): Promise<PendingScammer[]> {
+    return Array.from(this.scammers.values()).map(s => ({
+      ...s,
+      status: this.scammerStatuses.get(s.id) ?? "pending",
+    }));
+  }
+
+  async updateScammerStatus(scammerId: string, status: ContentStatus): Promise<boolean> {
+    if (!this.scammers.has(scammerId)) return false;
+    this.scammerStatuses.set(scammerId, status);
+    return true;
+  }
+
+  // News
+  async getNews(): Promise<News[]> {
+    return Array.from(this.news.values())
+      .filter(n => n.status === "approved")
+      .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+  }
+
+  async getNewsItem(id: string): Promise<News | undefined> {
+    return this.news.get(id);
+  }
+
+  async createNews(data: InsertNews): Promise<News> {
+    const id = randomUUID();
+    const news: News = {
+      id,
+      title: data.title,
+      content: data.content,
+      source: data.source,
+      sourceUrl: data.sourceUrl,
+      publishedAt: new Date().toISOString(),
+      trustScore: 0,
+      verified: false,
+      likes: 0,
+      comments: [],
+      status: "pending",
+    };
+    this.news.set(id, news);
+    return news;
+  }
+
+  async updateNewsStatus(newsId: string, status: ContentStatus): Promise<boolean> {
+    const news = this.news.get(newsId);
+    if (!news) return false;
+    news.status = status;
+    this.news.set(newsId, news);
+    return true;
+  }
+
+  async likeNews(newsId: string, sessionId: string): Promise<boolean> {
+    const news = this.news.get(newsId);
+    if (!news) return false;
+    
+    const likes = this.newsLikes.get(newsId) ?? new Set();
+    if (likes.has(sessionId)) return false;
+    
+    likes.add(sessionId);
+    this.newsLikes.set(newsId, likes);
+    news.likes += 1;
+    this.news.set(newsId, news);
+    return true;
+  }
+
+  async addNewsComment(newsId: string, content: string, sessionId: string): Promise<NewsComment | null> {
+    const news = this.news.get(newsId);
+    if (!news) return null;
+    
+    const comment: NewsComment = {
+      id: randomUUID(),
+      content,
+      createdAt: new Date().toISOString(),
+      sessionId,
+    };
+    news.comments.push(comment);
+    this.news.set(newsId, news);
+    return comment;
+  }
+
+  // Admin only methods for pending news
+  async getAllNews(): Promise<News[]> {
+    return Array.from(this.news.values())
+      .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
   }
 }
 

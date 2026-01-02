@@ -11,6 +11,7 @@ const navItems = [
   { href: "/vote", label: "Vote" },
   { href: "/parties", label: "Parties" },
   { href: "/constituencies", label: "MPs" },
+  { href: "/news", label: "News" },
   { href: "/leaderboard", label: "Leaderboard" },
   { href: "/scammers", label: "Scammers" },
 ];

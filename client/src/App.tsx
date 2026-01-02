@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -17,6 +17,9 @@ import ScammersPage from "@/pages/scammers";
 import SubmitCasePage from "@/pages/submit-case";
 import ReportScammerPage from "@/pages/report-scammer";
 import CreatePollPage from "@/pages/create-poll";
+import NewsPage from "@/pages/news";
+import AdminLogin from "@/pages/admin-login";
+import AdminDashboard from "@/pages/admin-dashboard";
 
 function Router() {
   return (
@@ -31,8 +34,30 @@ function Router() {
       <Route path="/submit" component={SubmitCasePage} />
       <Route path="/report-scammer" component={ReportScammerPage} />
       <Route path="/create-poll" component={CreatePollPage} />
+      <Route path="/news" component={NewsPage} />
+      <Route path="/glen20/login" component={AdminLogin} />
+      <Route path="/glen20/dashboard" component={AdminDashboard} />
       <Route component={NotFound} />
     </Switch>
+  );
+}
+
+function AppContent() {
+  const [location] = useLocation();
+  const isAdminRoute = location.startsWith("/glen20");
+
+  if (isAdminRoute) {
+    return <Router />;
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      <Navigation />
+      <main className="flex-1">
+        <Router />
+      </main>
+      <Footer />
+    </div>
   );
 }
 
@@ -41,13 +66,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <TooltipProvider>
-          <div className="min-h-screen flex flex-col">
-            <Navigation />
-            <main className="flex-1">
-              <Router />
-            </main>
-            <Footer />
-          </div>
+          <AppContent />
           <Toaster />
         </TooltipProvider>
       </ThemeProvider>

@@ -237,6 +237,67 @@ export interface User {
 export type InsertUser = Omit<User, "id">;
 
 // ========================================
+// Admin Panel Types
+// ========================================
+
+export type ContentStatus = "pending" | "approved" | "rejected";
+
+export interface PendingCase extends Case {
+  status: ContentStatus;
+  aiSuggestion?: {
+    recommendation: "approve" | "reject";
+    confidence: number;
+    reason: string;
+  };
+}
+
+export interface PendingScammer extends Scammer {
+  status: ContentStatus;
+  aiSuggestion?: {
+    recommendation: "approve" | "reject";
+    confidence: number;
+    reason: string;
+  };
+}
+
+export interface News {
+  id: string;
+  title: string;
+  content: string;
+  source: string;
+  sourceUrl: string;
+  publishedAt: string;
+  trustScore: number;
+  verified: boolean;
+  likes: number;
+  comments: NewsComment[];
+  status: ContentStatus;
+}
+
+export interface NewsComment {
+  id: string;
+  content: string;
+  createdAt: string;
+  sessionId: string;
+}
+
+export const insertNewsSchema = z.object({
+  title: z.string().min(10).max(300),
+  content: z.string().min(50).max(10000),
+  source: z.string().min(2).max(100),
+  sourceUrl: z.string().url(),
+});
+
+export type InsertNews = z.infer<typeof insertNewsSchema>;
+
+export const insertNewsCommentSchema = z.object({
+  newsId: z.string(),
+  content: z.string().min(1).max(1000),
+});
+
+export type InsertNewsComment = z.infer<typeof insertNewsCommentSchema>;
+
+// ========================================
 // MP/Constituency Voting (আসন ভিত্তিক ভোট)
 // Based on Bangladesh Election Commission 2026 data
 // ========================================
