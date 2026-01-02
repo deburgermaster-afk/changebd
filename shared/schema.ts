@@ -1,14 +1,107 @@
 import { z } from "zod";
 
-// Political Parties
+// Political Parties - Based on Bangladesh Election Commission data (2024-2025)
+// Note: Awami League registration SUSPENDED after July 2024 uprising
 export const politicalParties = [
-  { id: "awami-league", name: "Bangladesh Awami League", shortName: "AL", color: "#006A4E" },
-  { id: "bnp", name: "Bangladesh Nationalist Party", shortName: "BNP", color: "#E31B23" },
-  { id: "jatiya-party", name: "Jatiya Party", shortName: "JP", color: "#FFD700" },
-  { id: "jamaat", name: "Jamaat-e-Islami", shortName: "JI", color: "#008000" },
-  { id: "jsd", name: "Jatiya Samajtantrik Dal", shortName: "JSD", color: "#FF6B35" },
-  { id: "cpp", name: "Communist Party", shortName: "CPB", color: "#CC0000" },
-  { id: "others", name: "Others / Independent", shortName: "IND", color: "#6B7280" },
+  { 
+    id: "awami-league", 
+    name: "Bangladesh Awami League", 
+    shortName: "AL", 
+    color: "#006A4E",
+    symbol: "boat",
+    nominations: 0,
+    status: "banned",
+    founded: 1949,
+    description: "Registration SUSPENDED by Election Commission"
+  },
+  { 
+    id: "bnp", 
+    name: "Bangladesh Nationalist Party", 
+    shortName: "BNP", 
+    color: "#E31B23",
+    symbol: "sheaf",
+    nominations: 331,
+    status: "active",
+    founded: 1978,
+    description: "Leading opposition party"
+  },
+  { 
+    id: "jamaat", 
+    name: "Jamaat-e-Islami Bangladesh", 
+    shortName: "JI", 
+    color: "#228B22",
+    symbol: "scales",
+    nominations: 276,
+    status: "active",
+    founded: 1941,
+    description: "Major Islamic democratic party"
+  },
+  { 
+    id: "jatiya-party", 
+    name: "Jatiya Party", 
+    shortName: "JP", 
+    color: "#FFD700",
+    symbol: "plough",
+    nominations: 224,
+    status: "active",
+    founded: 1986,
+    description: "Centrist political party"
+  },
+  { 
+    id: "islami-andolon", 
+    name: "Islami Andolon Bangladesh", 
+    shortName: "IAB", 
+    color: "#2E8B57",
+    symbol: "crescent",
+    nominations: 268,
+    status: "active",
+    founded: 1987,
+    description: "Islamic political movement"
+  },
+  { 
+    id: "gono-odhikar", 
+    name: "Gono Odhikar Parishad", 
+    shortName: "GOP", 
+    color: "#FF6B35",
+    symbol: "torch",
+    nominations: 104,
+    status: "active",
+    founded: 2017,
+    description: "People's Rights Council"
+  },
+  { 
+    id: "ncp", 
+    name: "National Citizen Party", 
+    shortName: "NCP", 
+    color: "#4169E1",
+    symbol: "star",
+    nominations: 44,
+    status: "active",
+    founded: 2025,
+    description: "Youth-led reform party (formed Feb 2025)"
+  },
+  { 
+    id: "cpb", 
+    name: "Communist Party of Bangladesh", 
+    shortName: "CPB", 
+    color: "#CC0000",
+    symbol: "hammer-sickle",
+    nominations: 65,
+    status: "active",
+    founded: 1948,
+    description: "Left-wing socialist party"
+  },
+  { 
+    id: "others", 
+    name: "Others / Independent", 
+    shortName: "IND", 
+    color: "#6B7280",
+    symbol: "people",
+    nominations: 0,
+    status: "active",
+    founded: 0,
+    description: "Independent candidates and smaller parties"
+  },
 ] as const;
 
 export type PoliticalParty = typeof politicalParties[number];

@@ -1,70 +1,110 @@
 import { useState } from "react";
-import { Check, Users } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Ban, Check, Users, Vote, Ship, Wheat, Scale, Tractor, Moon, Flame, Star, CircleDot } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 import { politicalParties, type PartyVoteResult } from "@shared/schema";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 
-interface PartyCardProps {
-  party: typeof politicalParties[number];
+type PartyType = typeof politicalParties[number];
+
+function PartySymbol({ symbol, color, size = 24 }: { symbol: string; color: string; size?: number }) {
+  const iconProps = { size, color, strokeWidth: 2 };
+  
+  switch (symbol) {
+    case "boat":
+      return <Ship {...iconProps} />;
+    case "sheaf":
+      return <Wheat {...iconProps} />;
+    case "scales":
+      return <Scale {...iconProps} />;
+    case "plough":
+      return <Tractor {...iconProps} />;
+    case "crescent":
+      return <Moon {...iconProps} />;
+    case "torch":
+      return <Flame {...iconProps} />;
+    case "star":
+      return <Star {...iconProps} />;
+    case "hammer-sickle":
+      return <CircleDot {...iconProps} />;
+    case "people":
+      return <Users {...iconProps} />;
+    default:
+      return <Vote {...iconProps} />;
+  }
+}
+
+interface PartyButtonProps {
+  party: PartyType;
   voteResult?: PartyVoteResult;
   isSelected: boolean;
   hasVoted: boolean;
-  onSelect: () => void;
+  onVote: () => void;
+  isPending: boolean;
 }
 
-function PartyIcon({ partyId, color }: { partyId: string; color: string }) {
-  const initials = partyId.split("-").map(w => w[0].toUpperCase()).join("");
-  return (
-    <div 
-      className="w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-lg"
-      style={{ backgroundColor: color }}
-    >
-      {initials}
-    </div>
-  );
-}
-
-function PartyCard({ party, voteResult, isSelected, hasVoted, onSelect }: PartyCardProps) {
-  const percentage = voteResult?.percentage ?? 0;
+function PartyButton({ party, voteResult, isSelected, hasVoted, onVote, isPending }: PartyButtonProps) {
+  const isBanned = party.status === "banned";
   const votes = voteResult?.votes ?? 0;
+  const percentage = voteResult?.percentage ?? 0;
 
   return (
-    <Card 
-      className={`cursor-pointer transition-all hover-elevate ${
-        isSelected ? "ring-2 ring-primary" : ""
-      } ${hasVoted && !isSelected ? "opacity-60" : ""}`}
-      onClick={onSelect}
-      data-testid={`card-party-${party.id}`}
+    <button
+      onClick={() => !isBanned && !hasVoted && onVote()}
+      disabled={isBanned || hasVoted || isPending}
+      className={`
+        relative w-full p-4 rounded-md border transition-all text-left
+        ${isBanned 
+          ? "bg-destructive/10 border-destructive/30 cursor-not-allowed opacity-70" 
+          : isSelected 
+            ? "bg-primary/10 border-primary ring-2 ring-primary" 
+            : hasVoted 
+              ? "bg-muted/50 cursor-default"
+              : "bg-card border-border hover-elevate active-elevate-2 cursor-pointer"
+        }
+      `}
+      data-testid={`button-vote-party-${party.id}`}
     >
-      <CardContent className="p-4">
-        <div className="flex items-center gap-4">
-          <PartyIcon partyId={party.id} color={party.color} />
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-sm truncate" data-testid={`text-party-name-${party.id}`}>
-              {party.name}
-            </h3>
-            <p className="text-xs text-muted-foreground">{party.shortName}</p>
-            {hasVoted && (
-              <div className="mt-2">
-                <div className="flex items-center justify-between text-xs mb-1">
-                  <span className="tabular-nums">{percentage.toFixed(1)}%</span>
-                  <span className="text-muted-foreground tabular-nums">{votes.toLocaleString()} votes</span>
-                </div>
-                <Progress value={percentage} className="h-2" />
-              </div>
-            )}
+      {isBanned && (
+        <div className="absolute inset-0 flex items-center justify-center z-10 bg-destructive/5 rounded-md">
+          <div className="flex flex-col items-center gap-1">
+            <Ban className="h-10 w-10 text-destructive" />
+            <span className="text-xs font-bold text-destructive uppercase tracking-wider">BANNED</span>
           </div>
-          {isSelected && hasVoted && (
-            <div className="flex-shrink-0">
-              <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
-                <Check className="w-4 h-4 text-primary-foreground" />
-              </div>
+        </div>
+      )}
+      
+      <div className={`flex items-center gap-3 ${isBanned ? "opacity-40" : ""}`}>
+        <div 
+          className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
+          style={{ backgroundColor: `${party.color}20`, border: `2px solid ${party.color}` }}
+        >
+          <PartySymbol symbol={party.symbol} color={party.color} size={20} />
+        </div>
+        
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="font-semibold text-sm truncate">{party.name}</h3>
+            <Badge variant="secondary" className="text-xs">{party.shortName}</Badge>
+          </div>
+          <p className="text-xs text-muted-foreground mt-0.5">{party.description}</p>
+          
+          {hasVoted && !isBanned && (
+            <div className="flex items-center gap-3 mt-2 text-xs">
+              <span className="font-medium tabular-nums">{percentage.toFixed(1)}%</span>
+              <span className="text-muted-foreground tabular-nums">{votes.toLocaleString()} votes</span>
             </div>
           )}
         </div>
-      </CardContent>
-    </Card>
+        
+        {isSelected && hasVoted && (
+          <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+            <Check className="w-4 h-4 text-primary-foreground" />
+          </div>
+        )}
+      </div>
+    </button>
   );
 }
 
@@ -83,43 +123,70 @@ export function PartyVotingSection({
   selectedPartyId,
   isLoading 
 }: PartyVotingSectionProps) {
-  const [localSelected, setLocalSelected] = useState<string | null>(selectedPartyId ?? null);
-  const [submitting, setSubmitting] = useState(false);
+  const [isPending, setIsPending] = useState(false);
+  const [confirmParty, setConfirmParty] = useState<string | null>(null);
+  const [localVotedParty, setLocalVotedParty] = useState<string | null>(null);
+  const [voteError, setVoteError] = useState<string | null>(null);
 
-  const handleSelect = (partyId: string) => {
-    if (hasVoted) return;
-    setLocalSelected(partyId);
+  const effectiveHasVoted = hasVoted || localVotedParty !== null;
+  const effectiveSelectedParty = selectedPartyId || localVotedParty;
+
+  const handleSelectParty = (partyId: string) => {
+    if (effectiveHasVoted || isPending || voteError) return;
+    setConfirmParty(partyId);
   };
 
-  const handleSubmit = async () => {
-    if (!localSelected || hasVoted) return;
-    setSubmitting(true);
-    await onVote?.(localSelected);
-    setSubmitting(false);
+  const handleConfirmVote = async () => {
+    if (!confirmParty || effectiveHasVoted || isPending) return;
+    setIsPending(true);
+    setVoteError(null);
+    const votedFor = confirmParty;
+    setConfirmParty(null);
+    
+    try {
+      await onVote?.(votedFor);
+      setLocalVotedParty(votedFor);
+    } catch (err) {
+      setVoteError("Vote failed. Please try again.");
+      setConfirmParty(votedFor);
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  const handleCancelVote = () => {
+    setConfirmParty(null);
+    setVoteError(null);
   };
 
   const getVoteResult = (partyId: string) => {
     return results?.find(r => r.partyId === partyId);
   };
 
+  const chartData = effectiveHasVoted && results 
+    ? politicalParties
+        .filter(p => p.status !== "banned")
+        .map(party => {
+          const result = getVoteResult(party.id);
+          return {
+            name: party.shortName,
+            votes: result?.votes ?? 0,
+            color: party.color,
+          };
+        })
+        .sort((a, b) => b.votes - a.votes)
+    : [];
+
+  const totalVotes = results?.reduce((sum, r) => sum + r.votes, 0) ?? 0;
+
   if (isLoading) {
     return (
-      <section className="py-12">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="h-8 w-48 bg-muted rounded mb-6 animate-pulse" />
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <section className="py-8">
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="h-8 w-64 bg-muted rounded mb-6 animate-pulse" />
+          <div className="grid gap-3 md:grid-cols-2">
             {[1, 2, 3, 4, 5, 6].map(i => (
-              <Card key={i} className="animate-pulse">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-full bg-muted" />
-                    <div className="flex-1">
-                      <div className="h-4 bg-muted rounded w-3/4 mb-2" />
-                      <div className="h-3 bg-muted rounded w-1/2" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <div key={i} className="h-20 bg-muted rounded animate-pulse" />
             ))}
           </div>
         </div>
@@ -128,52 +195,115 @@ export function PartyVotingSection({
   }
 
   return (
-    <section className="py-12" data-testid="section-party-voting">
-      <div className="max-w-6xl mx-auto px-4">
-        <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
-          <div>
-            <h2 className="text-2xl font-bold" data-testid="text-party-voting-title">
-              Political Party Voting
-            </h2>
-            <p className="text-muted-foreground text-sm">
-              {hasVoted 
-                ? "Thank you for voting! Results are shown below."
-                : "Select your preferred party and cast your anonymous vote"}
-            </p>
-          </div>
-          {!hasVoted && localSelected && (
-            <Button 
-              onClick={handleSubmit} 
-              disabled={submitting}
-              data-testid="button-submit-party-vote"
-            >
-              {submitting ? "Submitting..." : "Cast Vote"}
-            </Button>
-          )}
+    <section className="py-8" data-testid="section-party-voting">
+      <div className="max-w-4xl mx-auto px-4">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold flex items-center gap-2" data-testid="text-party-voting-title">
+            <Vote className="h-6 w-6 text-primary" />
+            Political Party Voting
+          </h2>
+          <p className="text-muted-foreground text-sm mt-1">
+            {effectiveHasVoted 
+              ? `You've voted! See results from ${totalVotes.toLocaleString()} voters below.`
+              : "Tap any party below to cast your anonymous vote instantly"}
+          </p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {effectiveHasVoted && chartData.length > 0 && (
+          <Card className="mb-6 p-4">
+            <h3 className="text-sm font-medium mb-4 text-muted-foreground">Vote Distribution</h3>
+            <ResponsiveContainer width="100%" height={200}>
+              <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                <XAxis 
+                  dataKey="name" 
+                  tick={{ fontSize: 11 }}
+                  className="fill-muted-foreground"
+                />
+                <YAxis 
+                  tick={{ fontSize: 11 }}
+                  className="fill-muted-foreground"
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: "hsl(var(--card))", 
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "6px",
+                    fontSize: "12px"
+                  }}
+                  labelStyle={{ fontWeight: 600 }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="votes" 
+                  stroke="hsl(var(--primary))" 
+                  strokeWidth={2}
+                  dot={{ fill: "hsl(var(--primary))", strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6, fill: "hsl(var(--primary))" }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </Card>
+        )}
+
+        {confirmParty && !effectiveHasVoted && (
+          <Card className={`mb-4 p-4 ${voteError ? "border-destructive bg-destructive/5" : "border-primary bg-primary/5"}`}>
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div className="flex items-center gap-3">
+                <Vote className={`h-5 w-5 ${voteError ? "text-destructive" : "text-primary"}`} />
+                <div>
+                  <p className="font-medium text-sm">
+                    {voteError ? "Vote Failed" : "Confirm your vote"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {voteError || `Vote for ${politicalParties.find(p => p.id === confirmParty)?.name}?`}
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleCancelVote}
+                  disabled={isPending}
+                  data-testid="button-cancel-vote"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  size="sm" 
+                  onClick={handleConfirmVote}
+                  disabled={isPending}
+                  data-testid="button-confirm-vote"
+                >
+                  {isPending ? "Voting..." : voteError ? "Retry" : "Confirm Vote"}
+                </Button>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        <div className="grid gap-3 md:grid-cols-2">
           {politicalParties.map((party) => (
-            <PartyCard
+            <PartyButton
               key={party.id}
               party={party}
               voteResult={getVoteResult(party.id)}
-              isSelected={localSelected === party.id}
-              hasVoted={hasVoted}
-              onSelect={() => handleSelect(party.id)}
+              isSelected={confirmParty === party.id || effectiveSelectedParty === party.id}
+              hasVoted={effectiveHasVoted}
+              onVote={() => handleSelectParty(party.id)}
+              isPending={isPending}
             />
           ))}
         </div>
 
-        {hasVoted && results && (
-          <Card className="mt-6 p-4">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Users className="h-4 w-4" />
-              <span data-testid="text-total-party-votes">
-                Total votes: {results.reduce((sum, r) => sum + r.votes, 0).toLocaleString()}
-              </span>
-            </div>
-          </Card>
+        {effectiveHasVoted && (
+          <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+            <Users className="h-4 w-4" />
+            <span data-testid="text-total-party-votes">
+              Total anonymous votes: {totalVotes.toLocaleString()}
+            </span>
+          </div>
         )}
       </div>
     </section>

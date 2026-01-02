@@ -1,10 +1,11 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { PartyVotingSection } from "@/components/party-voting";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { politicalParties, type PartyVoteResult } from "@shared/schema";
+import { Info, AlertTriangle, Users, Vote } from "lucide-react";
 
 export default function PartiesPage() {
   const { toast } = useToast();
@@ -24,72 +25,85 @@ export default function PartiesPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/parties/votes"] });
       queryClient.invalidateQueries({ queryKey: ["/api/parties/vote-status"] });
-      toast({ title: "Vote cast!", description: "Your party vote has been recorded." });
+      toast({ title: "Vote cast!", description: "Your anonymous party vote has been recorded." });
     },
   });
 
-  const chartData = results?.map(r => {
-    const party = politicalParties.find(p => p.id === r.partyId);
-    return {
-      name: party?.shortName ?? r.partyId,
-      value: r.votes,
-      color: party?.color ?? "#6B7280",
-    };
-  }).filter(d => d.value > 0) ?? [];
+  const handleVote = async (partyId: string) => {
+    await voteOnParty.mutateAsync(partyId);
+  };
 
   const totalVotes = results?.reduce((sum, r) => sum + r.votes, 0) ?? 0;
+  const registeredParties = politicalParties.filter(p => p.status === "active").length;
+  const bannedParties = politicalParties.filter(p => p.status === "banned").length;
 
   return (
     <div className="min-h-screen">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold" data-testid="text-parties-page-title">Political Party Voting</h1>
-          <p className="text-muted-foreground">Cast your anonymous vote for your preferred political party</p>
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold flex items-center gap-3" data-testid="text-parties-page-title">
+            <Vote className="h-8 w-8 text-primary" />
+            Political Party Voting
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Based on Bangladesh Election Commission data (2024-2025)
+          </p>
         </div>
 
-        {voteStatus?.hasVoted && chartData.length > 0 && (
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle>Current Results</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={chartData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={100}
-                      paddingAngle={2}
-                      dataKey="value"
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    >
-                      {chartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip 
-                      formatter={(value: number) => [`${value} votes`, "Votes"]}
-                    />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
+        <div className="grid gap-4 md:grid-cols-3 mb-6">
+          <Card className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <Users className="h-5 w-5 text-primary" />
               </div>
-              <div className="text-center text-sm text-muted-foreground mt-4">
-                Total votes: {totalVotes.toLocaleString()}
+              <div>
+                <p className="text-2xl font-bold tabular-nums">{totalVotes.toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground">Total Votes</p>
               </div>
-            </CardContent>
+            </div>
           </Card>
-        )}
+          
+          <Card className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
+                <Info className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold tabular-nums">{registeredParties}</p>
+                <p className="text-xs text-muted-foreground">Active Parties</p>
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center">
+                <AlertTriangle className="h-5 w-5 text-destructive" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold tabular-nums">{bannedParties}</p>
+                <p className="text-xs text-muted-foreground">Suspended</p>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        <Card className="mb-6 p-4 bg-muted/50">
+          <div className="flex items-start gap-3">
+            <Info className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+            <div className="text-sm text-muted-foreground">
+              <p className="font-medium mb-1">Election Commission Update</p>
+              <p>As of 2025, Bangladesh has 59 registered political parties. Following the July 2024 uprising, the Bangladesh Awami League's registration has been suspended. 26+ new parties have been formed since then, including the youth-led National Citizen Party (NCP).</p>
+            </div>
+          </div>
+        </Card>
       </div>
 
       <PartyVotingSection
         results={results}
         hasVoted={voteStatus?.hasVoted}
         selectedPartyId={voteStatus?.partyId}
-        onVote={(partyId) => voteOnParty.mutate(partyId)}
+        onVote={handleVote}
         isLoading={isLoading}
       />
     </div>
