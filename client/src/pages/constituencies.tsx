@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, LabelList } from "recharts";
-import { Search, MapPin, Users, Check, Vote, User, ChevronRight, Building, Star, Share2, Download } from "lucide-react";
+import { Search, MapPin, Users, Check, Vote, User, ChevronRight, Building, Star, Share2 } from "lucide-react";
 import { type Constituency, type ConstituencyVoteResult, divisions, politicalParties } from "@shared/schema";
 import { PartyLogo } from "@/components/party-logos";
 import html2canvas from "html2canvas";
@@ -203,7 +203,7 @@ function ConstituencyDetail({ constituency, onBack }: ConstituencyDetailProps) {
   }).reduce((sum, v) => sum + v.votes, 0) ?? 0;
 
   const handleShare = async () => {
-    if (!shareRef.current || !hasVoted) return;
+    if (!shareRef.current) return;
     setIsSharing(true);
     
     try {
@@ -225,33 +225,22 @@ function ConstituencyDetail({ constituency, onBack }: ConstituencyDetailProps) {
       const file = new File([blob], `changebd-${constituency.code}.png`, { type: "image/png" });
       
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
-        try {
-          await navigator.share({
-            files: [file],
-            title: `${constituency.code} - Vote Results`,
-            text: `Check out the voting results for ${constituency.code} on ChangeBD.org!`,
-          });
-        } catch {
-          downloadBlob(blob);
-        }
+        await navigator.share({
+          files: [file],
+          title: `${constituency.code} - Vote Results`,
+          text: `Check out the voting results for ${constituency.code} on ChangeBD.org!`,
+        });
+        toast({ title: "Shared successfully!" });
       } else {
-        downloadBlob(blob);
+        toast({ title: "Sharing not supported on this device", variant: "destructive" });
       }
-      
-      toast({ title: "Share image ready!" });
-    } catch {
-      toast({ title: "Failed to generate share image", variant: "destructive" });
+    } catch (error: any) {
+      if (error?.name !== "AbortError") {
+        toast({ title: "Failed to share", variant: "destructive" });
+      }
     } finally {
       setIsSharing(false);
     }
-  };
-
-  const downloadBlob = (blob: Blob) => {
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `changebd-${constituency.code}.png`;
-    link.click();
-    URL.revokeObjectURL(link.href);
   };
 
   return (
@@ -270,22 +259,20 @@ function ConstituencyDetail({ constituency, onBack }: ConstituencyDetailProps) {
           </div>
         </div>
         
-        {hasVoted && (
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleShare}
-            disabled={isSharing}
-            data-testid="button-share-results"
-          >
-            {isSharing ? (
-              <Download className="h-4 w-4 animate-pulse" />
-            ) : (
-              <Share2 className="h-4 w-4" />
-            )}
-            <span className="ml-1.5 hidden sm:inline">Share</span>
-          </Button>
-        )}
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handleShare}
+          disabled={isSharing}
+          data-testid="button-share-results"
+        >
+          {isSharing ? (
+            <Share2 className="h-4 w-4 animate-pulse" />
+          ) : (
+            <Share2 className="h-4 w-4" />
+          )}
+          <span className="ml-1.5 hidden sm:inline">Share</span>
+        </Button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -313,8 +300,8 @@ function ConstituencyDetail({ constituency, onBack }: ConstituencyDetailProps) {
         </Card>
       </div>
 
-      {chartData.length > 0 && (
-        <div ref={shareRef} className="rounded-lg overflow-hidden" data-testid="share-container">
+      <div ref={shareRef} className="rounded-lg overflow-hidden space-y-3" data-testid="share-container">
+        {chartData.length > 0 && (
           <Card className="p-3 sm:p-4">
             <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
               <div>
@@ -374,13 +361,35 @@ function ConstituencyDetail({ constituency, onBack }: ConstituencyDetailProps) {
               </ResponsiveContainer>
             </div>
             
-            <div className="flex items-center justify-between mt-2 pt-2 border-t border-border">
+            <div className="mt-3 pt-3 border-t border-border">
+              <p className="text-xs font-medium mb-2 text-muted-foreground">Candidates</p>
+              <div className="grid gap-1.5">
+                {votableCandidates.map((candidate) => {
+                  const result = getVoteResult(candidate.id);
+                  return (
+                    <div key={candidate.id} className="flex items-center justify-between gap-2 text-xs">
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-2 h-2 rounded-full" 
+                          style={{ backgroundColor: getPartyColor(candidate.partyId) }}
+                        />
+                        <span className="font-medium">{candidate.name}</span>
+                        <span className="text-muted-foreground">({getPartyFullName(candidate.partyId)})</span>
+                      </div>
+                      <span className="tabular-nums">{(result?.votes ?? 0).toLocaleString()} votes</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            
+            <div className="flex items-center justify-between mt-3 pt-2 border-t border-border">
               <p className="text-xs text-muted-foreground">Bangladesh 2026 Election</p>
               <p className="text-xs font-medium text-primary" data-testid="text-share-url">changebd.org</p>
             </div>
           </Card>
-        </div>
-      )}
+        )}
+      </div>
 
       {confirmCandidate && !hasVoted && (
         <Card className={`p-4 ${voteError ? "border-destructive bg-destructive/5" : "border-primary bg-primary/5"}`}>
