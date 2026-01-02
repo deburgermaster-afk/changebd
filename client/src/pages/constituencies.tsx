@@ -152,7 +152,8 @@ function ConstituencyDetail({ constituency, onBack }: ConstituencyDetailProps) {
   const handleSelectCandidate = (candidateId: string) => {
     const candidate = constituency.candidates.find(c => c.id === candidateId);
     if (candidate?.partyId === "shahid") return;
-    if (hasVoted || isPending || voteError) return;
+    if (hasVoted || isPending) return;
+    setVoteError(null);
     setConfirmCandidate(candidateId);
   };
 
@@ -166,8 +167,11 @@ function ConstituencyDetail({ constituency, onBack }: ConstituencyDetailProps) {
     try {
       await voteOnConstituency.mutateAsync(votedFor);
       setLocalVotedCandidate(votedFor);
-    } catch (err) {
-      setVoteError("Vote failed. Please try again.");
+    } catch (err: any) {
+      const errorMsg = err?.message?.includes("Already voted") 
+        ? "You have already voted in this constituency."
+        : "Vote failed. Please try again.";
+      setVoteError(errorMsg);
       setConfirmCandidate(votedFor);
     } finally {
       setIsPending(false);
