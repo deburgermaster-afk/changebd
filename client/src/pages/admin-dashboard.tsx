@@ -338,7 +338,7 @@ export default function AdminDashboard() {
             <Shield className="w-6 h-6 text-primary" />
             <div>
               <h1 className="font-bold text-lg">Admin Panel</h1>
-              <p className="text-xs text-muted-foreground">JonomotBD Moderation</p>
+              <p className="text-xs text-muted-foreground">ChangeBD.org Moderation</p>
             </div>
           </div>
           <div className="flex items-center gap-2">

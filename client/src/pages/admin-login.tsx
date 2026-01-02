@@ -39,7 +39,7 @@ export default function AdminLogin() {
           </div>
           <CardTitle className="text-xl">Admin Login</CardTitle>
           <p className="text-sm text-muted-foreground mt-1">
-            JonomotBD Administration Panel
+            ChangeBD.org Administration Panel
           </p>
         </CardHeader>
         <CardContent>

@@ -15,7 +15,7 @@ export async function analyzeContent(content: string, type: "case" | "scammer" |
     };
   }
 
-  const systemPrompt = `You are a content moderation AI for JonomotBD, a Bangladesh civic engagement platform. 
+  const systemPrompt = `You are a content moderation AI for ChangeBD.org, a Bangladesh civic engagement platform. 
 Analyze the submitted content and provide a recommendation to approve or reject it.
 
 For ${type} submissions, consider:
@@ -37,8 +37,8 @@ Respond with JSON only:
       headers: {
         "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://jonomotbd.replit.app",
-        "X-Title": "JonomotBD Admin",
+        "HTTP-Referer": "https://changebd.org",
+        "X-Title": "ChangeBD.org Admin",
       },
       body: JSON.stringify({
         model: "google/gemini-2.0-flash-001",
@@ -99,7 +99,7 @@ export async function fetchAndAnalyzeNews(existingTitles: string[] = []): Promis
     ? `\n\nIMPORTANT: Do NOT generate news with these titles or similar topics (already exist):\n${existingTitles.map(t => `- "${t}"`).join('\n')}\n\nGenerate completely NEW and DIFFERENT stories.`
     : "";
 
-  const systemPrompt = `You are a news aggregator AI for JonomotBD, a Bangladesh civic engagement platform.
+  const systemPrompt = `You are a news aggregator AI for ChangeBD.org, a Bangladesh civic engagement platform.
 Generate 5 realistic news items about Bangladesh that would be relevant for civic engagement.
 Focus on: politics, elections, social issues, environment, education, healthcare, infrastructure.
 
@@ -124,8 +124,8 @@ Make the news realistic and relevant to current Bangladesh affairs (January 2026
       headers: {
         "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://jonomotbd.replit.app",
-        "X-Title": "JonomotBD News",
+        "HTTP-Referer": "https://changebd.org",
+        "X-Title": "ChangeBD.org News",
       },
       body: JSON.stringify({
         model: "google/gemini-2.0-flash-001",

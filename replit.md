@@ -1,8 +1,8 @@
-# JonomotBD - Bangladesh Civic Engagement Platform
+# ChangeBD.org - Bangladesh Civic Engagement Platform
 
 ## Overview
 
-JonomotBD ("Voice of Bangladesh") is an anonymous civic engagement platform enabling Bangladesh citizens to raise cases, vote on issues, report scammers, and participate in political party voting. The platform emphasizes anonymity and encryption to protect user identity while facilitating community-driven discourse on political, social, and environmental issues.
+ChangeBD.org ("Change Bangladesh") is an anonymous civic engagement platform enabling Bangladesh citizens to raise cases, vote on issues, report scammers, and participate in political party voting. The platform emphasizes anonymity and encryption to protect user identity while facilitating community-driven discourse on political, social, and environmental issues.
 
 Key features:
 - Anonymous case submission and voting across categories (political, social, scam alerts, environment, education, healthcare, infrastructure)

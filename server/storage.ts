@@ -36,7 +36,7 @@ import {
   newsLikesTable,
 } from "@shared/schema";
 
-const IP_SALT = process.env.SESSION_SECRET || "jonomotbd-secure-salt-2026";
+const IP_SALT = process.env.SESSION_SECRET || "changebd-secure-salt-2026";
 
 export function hashIP(ip: string): string {
   return createHash("sha256")

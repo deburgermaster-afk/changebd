@@ -222,14 +222,14 @@ function ConstituencyDetail({ constituency, onBack }: ConstituencyDetailProps) {
         return;
       }
       
-      const file = new File([blob], `jonomotbd-${constituency.code}.png`, { type: "image/png" });
+      const file = new File([blob], `changebd-${constituency.code}.png`, { type: "image/png" });
       
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
         try {
           await navigator.share({
             files: [file],
             title: `${constituency.code} - Vote Results`,
-            text: `Check out the voting results for ${constituency.code} on JonomotBD!`,
+            text: `Check out the voting results for ${constituency.code} on ChangeBD.org!`,
           });
         } catch {
           downloadBlob(blob);
@@ -249,7 +249,7 @@ function ConstituencyDetail({ constituency, onBack }: ConstituencyDetailProps) {
   const downloadBlob = (blob: Blob) => {
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `jonomotbd-${constituency.code}.png`;
+    link.download = `changebd-${constituency.code}.png`;
     link.click();
     URL.revokeObjectURL(link.href);
   };
@@ -323,7 +323,7 @@ function ConstituencyDetail({ constituency, onBack }: ConstituencyDetailProps) {
               </div>
               <div className="text-right">
                 <p className="text-xs font-medium" data-testid="text-share-votes">{totalVotes.toLocaleString()} votes</p>
-                <p className="text-xs text-muted-foreground">on JonomotBD</p>
+                <p className="text-xs text-muted-foreground">on ChangeBD.org</p>
               </div>
             </div>
             
@@ -376,7 +376,7 @@ function ConstituencyDetail({ constituency, onBack }: ConstituencyDetailProps) {
             
             <div className="flex items-center justify-between mt-2 pt-2 border-t border-border">
               <p className="text-xs text-muted-foreground">Bangladesh 2026 Election</p>
-              <p className="text-xs font-medium text-primary" data-testid="text-share-url">jonomotbd.replit.app</p>
+              <p className="text-xs font-medium text-primary" data-testid="text-share-url">changebd.org</p>
             </div>
           </Card>
         </div>

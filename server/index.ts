@@ -25,7 +25,7 @@ const MemStore = MemoryStore(session);
 
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || "jonomotbd-anonymous-session-secret",
+    secret: process.env.SESSION_SECRET || "changebd-anonymous-session-secret",
     resave: false,
     saveUninitialized: true,
     cookie: { 
