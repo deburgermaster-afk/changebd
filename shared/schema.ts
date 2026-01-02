@@ -602,6 +602,73 @@ export const constituencies: Constituency[] = [
 ];
 
 // ========================================
+// Gonovote 2026 Referendum
+// ========================================
+
+export interface GonovoteResult {
+  yesVotes: number;
+  noVotes: number;
+  totalVotes: number;
+  yesPercentage: number;
+  noPercentage: number;
+  expiresAt: string;
+}
+
+export const insertGonovoteSchema = z.object({
+  vote: z.enum(["yes", "no"]),
+});
+
+export type InsertGonovote = z.infer<typeof insertGonovoteSchema>;
+
+// Gonovote poll questions in Bangla and English
+export const gonovoteQuestions = [
+  {
+    bn: "তত্ত্বাবধায়ক সরকার, নির্বাচন কমিশন ও সরকারি কর্ম কমিশন (পিএসসি) গঠনে সরকারি দল ও বিরোধী দল একত্রে কাজ করবে।",
+    en: "The ruling party and opposition will work together to form the Caretaker Government, Election Commission, and Public Service Commission (PSC)."
+  },
+  {
+    bn: "সরকারি দল ইচ্ছেমতো সংবিধান সংশোধন করতে পারবে না।",
+    en: "The ruling party cannot amend the constitution at will."
+  },
+  {
+    bn: "সংবিধানের গুরুত্বপূর্ণ পরিবর্তনের ক্ষেত্রে গণভোটের বিধান চালু হবে।",
+    en: "A referendum system will be established for major constitutional changes."
+  },
+  {
+    bn: "বিরোধী দল থেকে ডেপুটি স্পিকার এবং গুরুত্বপূর্ণ সংসদীয় কমিটিসমূহের সভাপতি নির্বাচিত হবেন।",
+    en: "The Deputy Speaker and chairpersons of important parliamentary committees will be elected from the opposition party."
+  },
+  {
+    bn: "যত মেয়াদই হোক, কেউ সর্বোচ্চ ১০ বছরের বেশি প্রধানমন্ত্রী থাকতে পারবেন না।",
+    en: "Regardless of the number of terms, no one can serve as Prime Minister for more than 10 years."
+  },
+  {
+    bn: "সংসদে নারীর প্রতিনিধিত্ব পর্যায়ক্রমে বাড়বে।",
+    en: "Women's representation in parliament will gradually increase."
+  },
+  {
+    bn: "ক্ষমতার ভারসাম্য প্রতিষ্ঠার জন্য পার্লামেন্টে একটি উচ্চকক্ষ গঠিত হবে।",
+    en: "An upper house will be established in Parliament to ensure balance of power."
+  },
+  {
+    bn: "দেশের বিচারব্যবস্থা স্বাধীনভাবে কাজ করবে।",
+    en: "The country's judiciary will function independently."
+  },
+  {
+    bn: "আপনার মৌলিক অধিকারের সংখ্যা (যেমন: ইন্টারনেট সেবা কখনও বন্ধ করা যাবে না) বাড়বে।",
+    en: "Your fundamental rights will increase (e.g., internet service can never be blocked)."
+  },
+  {
+    bn: "দণ্ডপ্রাপ্ত অপরাধীকে রাষ্ট্রপতি ইচ্ছেমতো ক্ষমা করতে পারবেন না।",
+    en: "The President cannot pardon convicted criminals at will."
+  },
+  {
+    bn: "রাষ্ট্রপতি ও প্রধানমন্ত্রীর ক্ষমতার মধ্যে ভারসাম্য থাকবে।",
+    en: "There will be a balance of power between the President and Prime Minister."
+  },
+] as const;
+
+// ========================================
 // Database Tables (Drizzle ORM)
 // ========================================
 
@@ -693,6 +760,13 @@ export const newsCommentsTable = pgTable("news_comments", {
 export const newsLikesTable = pgTable("news_likes", {
   id: serial("id").primaryKey(),
   newsId: integer("news_id").notNull(),
+  ipHash: varchar("ip_hash", { length: 128 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const gonovoteVotesTable = pgTable("gonovote_votes", {
+  id: serial("id").primaryKey(),
+  vote: varchar("vote", { length: 10 }).notNull(),
   ipHash: varchar("ip_hash", { length: 128 }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

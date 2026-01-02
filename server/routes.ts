@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage, hashIP } from "./storage";
-import { insertCaseSchema, insertPollSchema, insertScammerSchema, insertCaseVoteSchema, insertPollVoteSchema, insertPartyVoteSchema, insertConstituencyVoteSchema, insertNewsCommentSchema } from "@shared/schema";
+import { insertCaseSchema, insertPollSchema, insertScammerSchema, insertCaseVoteSchema, insertPollVoteSchema, insertPartyVoteSchema, insertConstituencyVoteSchema, insertNewsCommentSchema, insertGonovoteSchema } from "@shared/schema";
 import { z } from "zod";
 import { analyzeContent, fetchAndAnalyzeNews } from "./ai";
 
@@ -256,6 +256,51 @@ export async function registerRoutes(
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: "Invalid data", details: error.errors });
+      }
+      res.status(500).json({ error: "Failed to vote" });
+    }
+  });
+
+  // ========================================
+  // Gonovote 2026 Routes
+  // ========================================
+
+  app.get("/api/gonovote/result", async (req, res) => {
+    try {
+      const result = await storage.getGonovoteResult();
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get results" });
+    }
+  });
+
+  app.get("/api/gonovote/vote-status", async (req, res) => {
+    try {
+      const ipHash = getIPHash(req);
+      const status = await storage.getGonovoteVoteStatus(ipHash);
+      res.json(status);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get vote status" });
+    }
+  });
+
+  app.post("/api/gonovote/vote", async (req, res) => {
+    try {
+      const ipHash = getIPHash(req);
+      const { vote } = insertGonovoteSchema.parse(req.body);
+      console.log(`[Gonovote] IP hash: ${ipHash.substring(0, 8)}... vote: ${vote}`);
+      
+      const success = await storage.voteOnGonovote(vote, ipHash);
+      if (!success) {
+        console.log(`[Gonovote] DENIED - IP hash ${ipHash.substring(0, 8)}... already voted`);
+        return res.status(400).json({ error: "You have already voted on this referendum" });
+      }
+      
+      console.log(`[Gonovote] SUCCESS - IP hash ${ipHash.substring(0, 8)}... voted ${vote}`);
+      res.json({ success: true });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid vote data", details: error.errors });
       }
       res.status(500).json({ error: "Failed to vote" });
     }

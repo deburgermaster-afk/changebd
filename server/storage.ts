@@ -34,6 +34,8 @@ import {
   newsTable,
   newsCommentsTable,
   newsLikesTable,
+  gonovoteVotesTable,
+  type GonovoteResult,
 } from "@shared/schema";
 
 const IP_SALT = process.env.SESSION_SECRET || "changebd-secure-salt-2026";
@@ -78,6 +80,10 @@ export interface IStorage {
   likeNews(newsId: string, ipHash: string): Promise<boolean>;
   addNewsComment(newsId: string, content: string, ipHash: string): Promise<NewsComment | null>;
   getAllNews(): Promise<News[]>;
+  
+  getGonovoteResult(): Promise<GonovoteResult>;
+  voteOnGonovote(vote: "yes" | "no", ipHash: string): Promise<boolean>;
+  getGonovoteVoteStatus(ipHash: string): Promise<{ hasVoted: boolean; vote?: string }>;
 }
 
 const pool = new pg.Pool({
@@ -585,6 +591,48 @@ export class DatabaseStorage implements IStorage {
       });
     }
     return newsWithComments;
+  }
+
+  async getGonovoteResult(): Promise<GonovoteResult> {
+    const yesResult = await db.select({ count: sql<number>`count(*)` })
+      .from(gonovoteVotesTable)
+      .where(eq(gonovoteVotesTable.vote, "yes"));
+    const noResult = await db.select({ count: sql<number>`count(*)` })
+      .from(gonovoteVotesTable)
+      .where(eq(gonovoteVotesTable.vote, "no"));
+
+    const yesVotes = Number(yesResult[0]?.count ?? 0);
+    const noVotes = Number(noResult[0]?.count ?? 0);
+    const totalVotes = yesVotes + noVotes;
+
+    const expiresAt = new Date("2026-06-30T23:59:59Z");
+
+    return {
+      yesVotes,
+      noVotes,
+      totalVotes,
+      yesPercentage: totalVotes > 0 ? (yesVotes / totalVotes) * 100 : 0,
+      noPercentage: totalVotes > 0 ? (noVotes / totalVotes) * 100 : 0,
+      expiresAt: expiresAt.toISOString(),
+    };
+  }
+
+  async voteOnGonovote(vote: "yes" | "no", ipHash: string): Promise<boolean> {
+    const existing = await db.select().from(gonovoteVotesTable)
+      .where(eq(gonovoteVotesTable.ipHash, ipHash));
+    
+    if (existing.length > 0) return false;
+
+    await db.insert(gonovoteVotesTable).values({ vote, ipHash });
+    return true;
+  }
+
+  async getGonovoteVoteStatus(ipHash: string): Promise<{ hasVoted: boolean; vote?: string }> {
+    const result = await db.select().from(gonovoteVotesTable)
+      .where(eq(gonovoteVotesTable.ipHash, ipHash));
+    
+    if (result.length === 0) return { hasVoted: false };
+    return { hasVoted: true, vote: result[0].vote };
   }
 }
 
