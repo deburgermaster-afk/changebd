@@ -209,7 +209,7 @@ export function PartyVotingSection({
           </p>
         </div>
 
-        {effectiveHasVoted && chartData.length > 0 && (
+        {chartData.length > 0 && (
           <Card className="mb-6 p-4">
             <h3 className="text-sm font-medium mb-4 text-muted-foreground">Vote Distribution</h3>
             <ResponsiveContainer width="100%" height={200}>

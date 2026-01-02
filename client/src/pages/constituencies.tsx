@@ -313,7 +313,7 @@ function ConstituencyDetail({ constituency, onBack }: ConstituencyDetailProps) {
         </Card>
       </div>
 
-      {hasVoted && chartData.length > 0 && (
+      {chartData.length > 0 && (
         <div ref={shareRef} className="rounded-lg overflow-hidden" data-testid="share-container">
           <Card className="p-3 sm:p-4">
             <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
