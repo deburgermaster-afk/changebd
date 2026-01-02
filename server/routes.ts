@@ -387,7 +387,10 @@ export async function registerRoutes(
 
   app.post("/api/admin/news/generate", requireAdmin, async (req, res) => {
     try {
-      const newsItems = await fetchAndAnalyzeNews();
+      const existingNews = await storage.getAllNews();
+      const existingTitles = existingNews.map(n => n.title);
+      
+      const newsItems = await fetchAndAnalyzeNews(existingTitles);
       const createdNews = await Promise.all(
         newsItems.map(async (item) => {
           const news = await storage.createNews({

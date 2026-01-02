@@ -90,10 +90,14 @@ interface NewsItem {
   trustScore: number;
 }
 
-export async function fetchAndAnalyzeNews(): Promise<NewsItem[]> {
+export async function fetchAndAnalyzeNews(existingTitles: string[] = []): Promise<NewsItem[]> {
   if (!OPENROUTER_API_KEY) {
     return [];
   }
+
+  const excludeSection = existingTitles.length > 0 
+    ? `\n\nIMPORTANT: Do NOT generate news with these titles or similar topics (already exist):\n${existingTitles.map(t => `- "${t}"`).join('\n')}\n\nGenerate completely NEW and DIFFERENT stories.`
+    : "";
 
   const systemPrompt = `You are a news aggregator AI for JonomotBD, a Bangladesh civic engagement platform.
 Generate 5 realistic news items about Bangladesh that would be relevant for civic engagement.
@@ -112,7 +116,7 @@ Respond with JSON array only:
   }
 ]
 
-Make the news realistic and relevant to current Bangladesh affairs (January 2026 timeframe, upcoming election on Feb 12, 2026).`;
+Make the news realistic and relevant to current Bangladesh affairs (January 2026 timeframe, upcoming election on Feb 12, 2026).${excludeSection}`;
 
   try {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -127,9 +131,9 @@ Make the news realistic and relevant to current Bangladesh affairs (January 2026
         model: "google/gemini-2.0-flash-001",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: "Generate 5 current Bangladesh news items for today's date." }
+          { role: "user", content: "Generate 5 current Bangladesh news items for today's date. Each must be unique and different from any previously generated news." }
         ],
-        temperature: 0.7,
+        temperature: 0.9,
       }),
     });
 
