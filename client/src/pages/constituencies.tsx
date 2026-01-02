@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -8,8 +8,10 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, LabelList } from "recharts";
-import { Search, MapPin, Users, Check, Vote, User, ChevronRight, Building, Wheat, BookOpen, Star, Moon, Flame, Hammer, UserCircle } from "lucide-react";
+import { Search, MapPin, Users, Check, Vote, User, ChevronRight, Building, Star, Share2, Download } from "lucide-react";
 import { type Constituency, type ConstituencyVoteResult, divisions, politicalParties } from "@shared/schema";
+import { PartyLogo } from "@/components/party-logos";
+import html2canvas from "html2canvas";
 
 function getParty(partyId: string) {
   return politicalParties.find(p => p.id === partyId);
@@ -23,32 +25,8 @@ function getPartyFullName(partyId: string): string {
   return getParty(partyId)?.name ?? "Independent";
 }
 
-function PartyIcon({ partyId, className = "w-4 h-4", style }: { partyId: string; className?: string; style?: React.CSSProperties }) {
-  const party = getParty(partyId);
-  const symbol = party?.symbol;
-  
-  switch (symbol) {
-    case "boat":
-      return <Building className={className} style={style} />;
-    case "sheaf":
-      return <Wheat className={className} style={style} />;
-    case "scales":
-      return <BookOpen className={className} style={style} />;
-    case "plough":
-      return <Hammer className={className} style={style} />;
-    case "crescent":
-      return <Moon className={className} style={style} />;
-    case "torch":
-      return <Flame className={className} style={style} />;
-    case "star":
-      return <Star className={className} style={style} />;
-    case "hammer-sickle":
-      return <Hammer className={className} style={style} />;
-    case "people":
-      return <UserCircle className={className} style={style} />;
-    default:
-      return <User className={className} style={style} />;
-  }
+function getPartySymbol(partyId: string): string {
+  return getParty(partyId)?.symbol ?? "";
 }
 
 interface CandidateCardProps {
@@ -85,12 +63,12 @@ function CandidateCard({ candidate, voteResult, isSelected, hasVoted, onSelect, 
       `}
       data-testid={`button-vote-candidate-${candidate.id}`}
     >
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3 sm:gap-4">
         <div 
-          className={`w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold text-lg ${isShahid ? "ring-4 ring-amber-400 shadow-lg shadow-amber-400/30" : ""}`}
+          className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold text-lg p-2 ${isShahid ? "ring-4 ring-amber-400 shadow-lg shadow-amber-400/30" : ""}`}
           style={{ backgroundColor: partyColor }}
         >
-          <PartyIcon partyId={candidate.partyId} className="w-6 h-6" />
+          <PartyLogo symbol={getPartySymbol(candidate.partyId)} className="w-6 h-6 sm:w-7 sm:h-7 invert brightness-0 invert" alt={partyName} />
         </div>
         
         <div className="flex-1 min-w-0">
@@ -105,9 +83,9 @@ function CandidateCard({ candidate, voteResult, isSelected, hasVoted, onSelect, 
           <div className="flex items-center gap-2 mt-2 flex-wrap">
             <div 
               className="flex items-center gap-1.5 px-2 py-0.5 rounded-md"
-              style={{ backgroundColor: `${partyColor}15` }}
+              style={{ backgroundColor: `${partyColor}20` }}
             >
-              <PartyIcon partyId={candidate.partyId} className="w-3.5 h-3.5" style={{ color: partyColor }} />
+              <PartyLogo symbol={getPartySymbol(candidate.partyId)} className="w-4 h-4" alt={partyName} />
               <span className="text-xs font-medium text-foreground">{partyName}</span>
             </div>
           </div>
@@ -145,6 +123,8 @@ function ConstituencyDetail({ constituency, onBack }: ConstituencyDetailProps) {
   const [localVotedCandidate, setLocalVotedCandidate] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
   const [voteError, setVoteError] = useState<string | null>(null);
+  const [isSharing, setIsSharing] = useState(false);
+  const shareRef = useRef<HTMLDivElement>(null);
 
   const { data: votes } = useQuery<ConstituencyVoteResult[]>({
     queryKey: ["/api/constituencies", constituency.id, "votes"],
@@ -222,19 +202,89 @@ function ConstituencyDetail({ constituency, onBack }: ConstituencyDetailProps) {
     return candidate?.partyId !== "shahid";
   }).reduce((sum, v) => sum + v.votes, 0) ?? 0;
 
+  const handleShare = async () => {
+    if (!shareRef.current || !hasVoted) return;
+    setIsSharing(true);
+    
+    try {
+      const canvas = await html2canvas(shareRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: null,
+      });
+      
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+          toast({ title: "Failed to generate image", variant: "destructive" });
+          setIsSharing(false);
+          return;
+        }
+        
+        const file = new File([blob], `jonomotbd-${constituency.code}.png`, { type: "image/png" });
+        
+        if (navigator.share && navigator.canShare?.({ files: [file] })) {
+          try {
+            await navigator.share({
+              files: [file],
+              title: `${constituency.code} - Vote Results`,
+              text: `Check out the voting results for ${constituency.code} on JonomotBD!`,
+            });
+          } catch (err) {
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `jonomotbd-${constituency.code}.png`;
+            link.click();
+            URL.revokeObjectURL(link.href);
+          }
+        } else {
+          const link = document.createElement("a");
+          link.href = URL.createObjectURL(blob);
+          link.download = `jonomotbd-${constituency.code}.png`;
+          link.click();
+          URL.revokeObjectURL(link.href);
+        }
+        
+        toast({ title: "Share image ready!" });
+        setIsSharing(false);
+      }, "image/png");
+    } catch (err) {
+      toast({ title: "Failed to generate share image", variant: "destructive" });
+      setIsSharing(false);
+    }
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4 flex-wrap">
-        <Button variant="outline" size="sm" onClick={onBack} data-testid="button-back-to-list">
-          Back to List
-        </Button>
-        <div>
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            <MapPin className="h-6 w-6 text-primary" />
-            {constituency.code}
-          </h2>
-          <p className="text-muted-foreground">{constituency.nameBn}</p>
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
+          <Button variant="outline" size="sm" onClick={onBack} data-testid="button-back-to-list">
+            Back
+          </Button>
+          <div>
+            <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+              <MapPin className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+              {constituency.code}
+            </h2>
+            <p className="text-sm text-muted-foreground">{constituency.nameBn}</p>
+          </div>
         </div>
+        
+        {hasVoted && (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleShare}
+            disabled={isSharing}
+            data-testid="button-share-results"
+          >
+            {isSharing ? (
+              <Download className="h-4 w-4 animate-pulse" />
+            ) : (
+              <Share2 className="h-4 w-4" />
+            )}
+            <span className="ml-1.5 hidden sm:inline">Share</span>
+          </Button>
+        )}
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -263,52 +313,71 @@ function ConstituencyDetail({ constituency, onBack }: ConstituencyDetailProps) {
       </div>
 
       {hasVoted && chartData.length > 0 && (
-        <Card className="p-4">
-          <h3 className="text-sm font-medium mb-4 text-muted-foreground">Vote Distribution</h3>
-          <ResponsiveContainer width="100%" height={Math.max(200, chartData.length * 60)}>
-            <BarChart 
-              data={chartData} 
-              layout="vertical"
-              margin={{ top: 5, right: 80, left: 10, bottom: 5 }}
-            >
-              <XAxis type="number" hide />
-              <YAxis 
-                type="category"
-                dataKey="party" 
-                tick={{ fontSize: 11 }}
-                className="fill-muted-foreground"
-                width={100}
-                tickLine={false}
-                axisLine={false}
-              />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: "hsl(var(--card))", 
-                  border: "1px solid hsl(var(--border))",
-                  borderRadius: "6px",
-                  fontSize: "12px"
-                }}
-                formatter={(value: number) => [`${value.toLocaleString()} votes`, "Votes"]}
-                labelFormatter={(label) => chartData.find(d => d.party === label)?.fullName ?? label}
-              />
-              <Bar 
-                dataKey="votes" 
-                radius={[0, 4, 4, 0]}
-                maxBarSize={40}
-              >
-                {chartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-                <LabelList 
-                  dataKey="votes" 
-                  position="right" 
-                  formatter={(value: number) => `${value.toLocaleString()}`}
-                  className="fill-foreground text-xs"
-                />
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </Card>
+        <div ref={shareRef} className="rounded-lg overflow-hidden">
+          <Card className="p-3 sm:p-4 bg-gradient-to-br from-[#006A4E]/5 to-[#F42A41]/5">
+            <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
+              <div>
+                <h3 className="font-bold text-sm sm:text-base">{constituency.code} - {constituency.nameBn}</h3>
+                <p className="text-xs text-muted-foreground">{constituency.district}, {constituency.division}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-xs font-medium">{totalVotes.toLocaleString()} votes</p>
+                <p className="text-[10px] text-muted-foreground">on JonomotBD</p>
+              </div>
+            </div>
+            
+            <div className="bg-card rounded-md p-2 sm:p-3">
+              <ResponsiveContainer width="100%" height={Math.max(150, chartData.length * 45)}>
+                <BarChart 
+                  data={chartData} 
+                  layout="vertical"
+                  margin={{ top: 5, right: 60, left: 5, bottom: 5 }}
+                >
+                  <XAxis type="number" hide />
+                  <YAxis 
+                    type="category"
+                    dataKey="party" 
+                    tick={{ fontSize: 10 }}
+                    className="fill-muted-foreground"
+                    width={80}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: "hsl(var(--card))", 
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "6px",
+                      fontSize: "11px"
+                    }}
+                    formatter={(value: number) => [`${value.toLocaleString()} votes`, "Votes"]}
+                    labelFormatter={(label) => chartData.find(d => d.party === label)?.fullName ?? label}
+                  />
+                  <Bar 
+                    dataKey="votes" 
+                    radius={[0, 4, 4, 0]}
+                    maxBarSize={32}
+                  >
+                    {chartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                    <LabelList 
+                      dataKey="votes" 
+                      position="right" 
+                      formatter={(value: number) => `${value.toLocaleString()}`}
+                      className="fill-foreground text-[10px]"
+                    />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            
+            <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/50">
+              <p className="text-[10px] text-muted-foreground">Bangladesh 2026 Election</p>
+              <p className="text-[10px] font-medium text-primary">jonomotbd.replit.app</p>
+            </div>
+          </Card>
+        </div>
       )}
 
       {confirmCandidate && !hasVoted && (
@@ -391,7 +460,7 @@ export default function ConstituenciesPage() {
   if (selectedConstituency) {
     return (
       <div className="min-h-screen">
-        <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
           <ConstituencyDetail 
             constituency={selectedConstituency} 
             onBack={() => setSelectedConstituency(null)}
@@ -403,58 +472,58 @@ export default function ConstituenciesPage() {
 
   return (
     <div className="min-h-screen">
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold flex items-center gap-3" data-testid="text-constituencies-page-title">
-            <Vote className="h-8 w-8 text-primary" />
-            MP/Constituency Voting
+      <div className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
+        <div className="mb-4 sm:mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2 sm:gap-3" data-testid="text-constituencies-page-title">
+            <Vote className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
+            MP Voting
           </h1>
-          <p className="text-muted-foreground mt-1">
-            আসন ভিত্তিক ভোট - Based on Bangladesh Election Commission 2026 data
+          <p className="text-sm text-muted-foreground mt-1">
+            আসন ভিত্তিক ভোট - Bangladesh Election 2026
           </p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3 mb-6">
-          <Card className="p-4">
-            <div className="flex items-center gap-3">
-              <MapPin className="h-5 w-5 text-primary" />
+        <div className="grid gap-3 grid-cols-3 mb-4 sm:mb-6">
+          <Card className="p-3 sm:p-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+              <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               <div>
-                <p className="text-2xl font-bold tabular-nums">{constituencies?.length ?? 0}</p>
-                <p className="text-xs text-muted-foreground">Constituencies</p>
+                <p className="text-lg sm:text-2xl font-bold tabular-nums">{constituencies?.length ?? 0}</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">Constituencies</p>
               </div>
             </div>
           </Card>
-          <Card className="p-4">
-            <div className="flex items-center gap-3">
-              <Users className="h-5 w-5 text-green-600" />
+          <Card className="p-3 sm:p-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+              <Users className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
               <div>
-                <p className="text-2xl font-bold tabular-nums">2,582</p>
-                <p className="text-xs text-muted-foreground">Total Candidates</p>
+                <p className="text-lg sm:text-2xl font-bold tabular-nums">2,582</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">Candidates</p>
               </div>
             </div>
           </Card>
-          <Card className="p-4">
-            <div className="flex items-center gap-3">
-              <Building className="h-5 w-5 text-blue-600" />
+          <Card className="p-3 sm:p-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+              <Building className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
               <div>
-                <p className="text-2xl font-bold tabular-nums">8</p>
-                <p className="text-xs text-muted-foreground">Divisions</p>
+                <p className="text-lg sm:text-2xl font-bold tabular-nums">8</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">Divisions</p>
               </div>
             </div>
           </Card>
         </div>
 
-        <Card className="mb-6 p-4 bg-muted/50">
-          <p className="text-sm text-muted-foreground">
-            <strong>Election Date:</strong> February 12, 2026 | <strong>Total Seats:</strong> 300 | <strong>Eligible Voters:</strong> 127.7 million
+        <Card className="mb-4 sm:mb-6 p-3 sm:p-4 bg-muted/50">
+          <p className="text-xs sm:text-sm text-muted-foreground">
+            <strong>Election:</strong> Feb 12, 2026 | <strong>Seats:</strong> 300 | <strong>Voters:</strong> 127.7M
           </p>
         </Card>
 
-        <div className="flex gap-3 mb-6 flex-wrap">
-          <div className="relative flex-1 min-w-[200px]">
+        <div className="flex gap-2 sm:gap-3 mb-4 sm:mb-6 flex-wrap">
+          <div className="relative flex-1 min-w-[150px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search constituency, area, or district..."
+              placeholder="Search..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -462,13 +531,13 @@ export default function ConstituenciesPage() {
             />
           </div>
           <Select value={selectedDivision} onValueChange={setSelectedDivision}>
-            <SelectTrigger className="w-[180px]" data-testid="select-division">
-              <SelectValue placeholder="All Divisions" />
+            <SelectTrigger className="w-[130px] sm:w-[180px]" data-testid="select-division">
+              <SelectValue placeholder="Division" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Divisions</SelectItem>
               {divisions.map(d => (
-                <SelectItem key={d.id} value={d.id}>{d.name} ({d.nameBn})</SelectItem>
+                <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -485,34 +554,34 @@ export default function ConstituenciesPage() {
             <p className="text-muted-foreground">No constituencies found matching your search.</p>
           </Card>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             {filteredConstituencies.map(constituency => (
               <Card 
                 key={constituency.id}
-                className="p-4 cursor-pointer hover-elevate"
+                className="p-3 sm:p-4 cursor-pointer hover-elevate"
                 onClick={() => setSelectedConstituency(constituency)}
                 data-testid={`card-constituency-${constituency.id}`}
               >
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                      <MapPin className="h-5 w-5 text-primary" />
+                <div className="flex items-center justify-between gap-2 sm:gap-4">
+                  <div className="flex items-center gap-2 sm:gap-4">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-semibold">{constituency.code}</h3>
-                        <Badge variant="secondary" className="text-xs">{constituency.nameBn}</Badge>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+                        <h3 className="font-semibold text-sm sm:text-base">{constituency.code}</h3>
+                        <Badge variant="secondary" className="text-[10px] sm:text-xs">{constituency.nameBn}</Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        {constituency.district} | {constituency.areas.slice(0, 2).join(", ")}
-                        {constituency.areas.length > 2 && ` +${constituency.areas.length - 2} more`}
+                      <p className="text-xs sm:text-sm text-muted-foreground truncate">
+                        {constituency.district} | {constituency.areas[0]}
+                        {constituency.areas.length > 1 && ` +${constituency.areas.length - 1}`}
                       </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {constituency.candidates.length} candidates | {constituency.totalVoters.toLocaleString()} voters
+                      <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">
+                        {constituency.candidates.length} candidates
                       </p>
                     </div>
                   </div>
-                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                  <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground flex-shrink-0" />
                 </div>
               </Card>
             ))}
