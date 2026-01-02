@@ -38,6 +38,9 @@ function NewsCard({ news }: { news: News }) {
       setNewComment("");
       toast({ title: "Comment added" });
     },
+    onError: () => {
+      toast({ title: "Failed to add comment", variant: "destructive" });
+    },
   });
 
   const handleSubmitComment = () => {
