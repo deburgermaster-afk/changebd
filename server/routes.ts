@@ -263,13 +263,17 @@ export async function registerRoutes(
         password: z.string(),
       }).parse(req.body);
 
+      console.log("Login attempt:", { email, hasPassword: !!password, adminEmailSet: !!ADMIN_EMAIL, adminPassSet: !!ADMIN_PASSWORD });
+
       if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
         req.session.isAdmin = true;
         res.json({ success: true });
       } else {
+        console.log("Credentials mismatch");
         res.status(401).json({ error: "Invalid credentials" });
       }
     } catch (error) {
+      console.log("Login parse error:", error);
       res.status(400).json({ error: "Invalid request" });
     }
   });
