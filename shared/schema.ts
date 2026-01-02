@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { pgTable, varchar, text, integer, boolean, timestamp, jsonb, serial } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
 
 // Political Parties - Based on Bangladesh Election Commission data (2024-2025)
 // Note: Awami League registration SUSPENDED after July 2024 uprising
@@ -598,3 +600,105 @@ export const constituencies: Constituency[] = [
     ]
   },
 ];
+
+// ========================================
+// Database Tables (Drizzle ORM)
+// ========================================
+
+export const casesTable = pgTable("cases", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 200 }).notNull(),
+  description: text("description").notNull(),
+  category: varchar("category", { length: 50 }).notNull(),
+  votes: integer("votes").notNull().default(0),
+  commentsCount: integer("comments_count").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  trending: boolean("trending").notNull().default(false),
+  evidence: jsonb("evidence").$type<string[]>().default([]),
+  status: varchar("status", { length: 20 }).notNull().default("pending"),
+});
+
+export const caseVotesTable = pgTable("case_votes", {
+  id: serial("id").primaryKey(),
+  caseId: integer("case_id").notNull(),
+  ipHash: varchar("ip_hash", { length: 128 }).notNull(),
+  direction: varchar("direction", { length: 10 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const pollsTable = pgTable("polls", {
+  id: serial("id").primaryKey(),
+  question: varchar("question", { length: 300 }).notNull(),
+  options: jsonb("options").$type<{ id: string; text: string; votes: number }[]>().notNull(),
+  totalVotes: integer("total_votes").notNull().default(0),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const pollVotesTable = pgTable("poll_votes", {
+  id: serial("id").primaryKey(),
+  pollId: integer("poll_id").notNull(),
+  optionId: varchar("option_id", { length: 50 }).notNull(),
+  ipHash: varchar("ip_hash", { length: 128 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const scammersTable = pgTable("scammers", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 100 }).notNull(),
+  type: varchar("type", { length: 20 }).notNull(),
+  description: text("description").notNull(),
+  evidenceCount: integer("evidence_count").notNull().default(0),
+  verified: boolean("verified").notNull().default(false),
+  reportedAt: timestamp("reported_at").defaultNow().notNull(),
+  status: varchar("status", { length: 20 }).notNull().default("pending"),
+});
+
+export const partyVotesTable = pgTable("party_votes", {
+  id: serial("id").primaryKey(),
+  partyId: varchar("party_id", { length: 50 }).notNull(),
+  ipHash: varchar("ip_hash", { length: 128 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const constituencyVotesTable = pgTable("constituency_votes", {
+  id: serial("id").primaryKey(),
+  constituencyId: varchar("constituency_id", { length: 50 }).notNull(),
+  candidateId: varchar("candidate_id", { length: 50 }).notNull(),
+  ipHash: varchar("ip_hash", { length: 128 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const newsTable = pgTable("news", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 300 }).notNull(),
+  content: text("content").notNull(),
+  source: varchar("source", { length: 100 }).notNull(),
+  sourceUrl: varchar("source_url", { length: 500 }).notNull(),
+  publishedAt: timestamp("published_at").defaultNow().notNull(),
+  trustScore: integer("trust_score").notNull().default(50),
+  verified: boolean("verified").notNull().default(false),
+  likes: integer("likes").notNull().default(0),
+  status: varchar("status", { length: 20 }).notNull().default("pending"),
+});
+
+export const newsCommentsTable = pgTable("news_comments", {
+  id: serial("id").primaryKey(),
+  newsId: integer("news_id").notNull(),
+  content: text("content").notNull(),
+  ipHash: varchar("ip_hash", { length: 128 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const newsLikesTable = pgTable("news_likes", {
+  id: serial("id").primaryKey(),
+  newsId: integer("news_id").notNull(),
+  ipHash: varchar("ip_hash", { length: 128 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type DbCase = typeof casesTable.$inferSelect;
+export type DbPoll = typeof pollsTable.$inferSelect;
+export type DbScammer = typeof scammersTable.$inferSelect;
+export type DbNews = typeof newsTable.$inferSelect;
+export type DbNewsComment = typeof newsCommentsTable.$inferSelect;

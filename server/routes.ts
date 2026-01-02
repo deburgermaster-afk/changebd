@@ -1,6 +1,6 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import { storage, hashIP } from "./storage";
 import { insertCaseSchema, insertPollSchema, insertScammerSchema, insertCaseVoteSchema, insertPollVoteSchema, insertPartyVoteSchema, insertConstituencyVoteSchema, insertNewsCommentSchema } from "@shared/schema";
 import { z } from "zod";
 import { analyzeContent, fetchAndAnalyzeNews } from "./ai";
@@ -15,11 +15,14 @@ function requireAdmin(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
-function getSessionId(req: Request): string {
-  if (!req.session.anonymousId) {
-    req.session.anonymousId = Math.random().toString(36).substring(2) + Date.now().toString(36);
-  }
-  return req.session.anonymousId;
+function getClientIP(req: Request): string {
+  const forwarded = req.headers["x-forwarded-for"];
+  const ip = typeof forwarded === "string" ? forwarded.split(",")[0].trim() : req.socket.remoteAddress || "unknown";
+  return ip;
+}
+
+function getIPHash(req: Request): string {
+  return hashIP(getClientIP(req));
 }
 
 export async function registerRoutes(
@@ -72,9 +75,9 @@ export async function registerRoutes(
 
   app.post("/api/cases/:id/vote", async (req, res) => {
     try {
-      const sessionId = getSessionId(req);
+      const ipHash = getIPHash(req);
       const { direction } = insertCaseVoteSchema.pick({ direction: true }).parse(req.body);
-      const success = await storage.voteOnCase(req.params.id, sessionId, direction);
+      const success = await storage.voteOnCase(req.params.id, ipHash, direction);
       if (!success) {
         return res.status(400).json({ error: "Already voted or case not found" });
       }
@@ -98,8 +101,8 @@ export async function registerRoutes(
 
   app.get("/api/polls/vote-status", async (req, res) => {
     try {
-      const sessionId = getSessionId(req);
-      const status = await storage.getPollVoteStatus(sessionId);
+      const ipHash = getIPHash(req);
+      const status = await storage.getPollVoteStatus(ipHash);
       res.json(status);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch vote status" });
@@ -121,9 +124,9 @@ export async function registerRoutes(
 
   app.post("/api/polls/:id/vote", async (req, res) => {
     try {
-      const sessionId = getSessionId(req);
+      const ipHash = getIPHash(req);
       const { optionId } = z.object({ optionId: z.string() }).parse(req.body);
-      const success = await storage.voteOnPoll(req.params.id, optionId, sessionId);
+      const success = await storage.voteOnPoll(req.params.id, optionId, ipHash);
       if (!success) {
         return res.status(400).json({ error: "Already voted or poll not found" });
       }
@@ -169,8 +172,8 @@ export async function registerRoutes(
 
   app.get("/api/parties/vote-status", async (req, res) => {
     try {
-      const sessionId = getSessionId(req);
-      const status = await storage.getPartyVoteStatus(sessionId);
+      const ipHash = getIPHash(req);
+      const status = await storage.getPartyVoteStatus(ipHash);
       res.json(status);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch vote status" });
@@ -179,9 +182,9 @@ export async function registerRoutes(
 
   app.post("/api/parties/vote", async (req, res) => {
     try {
-      const sessionId = getSessionId(req);
+      const ipHash = getIPHash(req);
       const { partyId } = insertPartyVoteSchema.parse(req.body);
-      const success = await storage.voteOnParty(partyId, sessionId);
+      const success = await storage.voteOnParty(partyId, ipHash);
       if (!success) {
         return res.status(400).json({ error: "Already voted or party not found" });
       }
@@ -206,8 +209,8 @@ export async function registerRoutes(
 
   app.get("/api/constituency-vote-status", async (req, res) => {
     try {
-      const sessionId = getSessionId(req);
-      const status = await storage.getConstituencyVoteStatus(sessionId);
+      const ipHash = getIPHash(req);
+      const status = await storage.getConstituencyVoteStatus(ipHash);
       res.json(status);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch vote status" });
@@ -237,9 +240,9 @@ export async function registerRoutes(
 
   app.post("/api/constituencies/:id/vote", async (req, res) => {
     try {
-      const sessionId = getSessionId(req);
+      const ipHash = getIPHash(req);
       const { candidateId } = insertConstituencyVoteSchema.omit({ constituencyId: true }).parse(req.body);
-      const success = await storage.voteOnConstituency(req.params.id, candidateId, sessionId);
+      const success = await storage.voteOnConstituency(req.params.id, candidateId, ipHash);
       if (!success) {
         return res.status(400).json({ error: "Already voted or candidate not found" });
       }
@@ -463,8 +466,8 @@ export async function registerRoutes(
 
   app.post("/api/news/:id/like", async (req, res) => {
     try {
-      const sessionId = getSessionId(req);
-      const success = await storage.likeNews(req.params.id, sessionId);
+      const ipHash = getIPHash(req);
+      const success = await storage.likeNews(req.params.id, ipHash);
       if (!success) {
         return res.status(400).json({ error: "Already liked or news not found" });
       }
@@ -476,9 +479,9 @@ export async function registerRoutes(
 
   app.post("/api/news/:id/comment", async (req, res) => {
     try {
-      const sessionId = getSessionId(req);
+      const ipHash = getIPHash(req);
       const { content } = insertNewsCommentSchema.omit({ newsId: true }).parse(req.body);
-      const comment = await storage.addNewsComment(req.params.id, content, sessionId);
+      const comment = await storage.addNewsComment(req.params.id, content, ipHash);
       if (!comment) {
         return res.status(404).json({ error: "News not found" });
       }
