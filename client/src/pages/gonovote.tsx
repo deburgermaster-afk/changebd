@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Check, X, Clock, FileText, Scale, Users, Shield, Landmark, Vote, Globe } from "lucide-react";
+import { Check, X, Clock, FileText, Scale, Users, Shield, Landmark, Vote, Globe, ChevronDown } from "lucide-react";
 import type { GonovoteResult } from "@shared/schema";
 
 const reformQuestions = [
@@ -200,11 +200,12 @@ export default function GonovotePage() {
             {result?.expiresAt && <CountdownTimer targetDate={result.expiresAt} />}
           </div>
 
-          <p className="text-sm opacity-70">
-            নিচে সংস্কার প্রস্তাবগুলো পড়ুন, তারপর ভোট দিন
-            <br />
-            Read the reform proposals below, then cast your vote
-          </p>
+          <div className="animate-bounce mt-6">
+            <div className="flex flex-col items-center gap-1 cursor-pointer opacity-80 hover:opacity-100 transition-opacity" onClick={() => window.scrollTo({ top: window.innerHeight * 0.7, behavior: 'smooth' })}>
+              <span className="text-xs sm:text-sm">নিচে স্ক্রল করুন / Scroll to Vote</span>
+              <ChevronDown className="h-5 w-5" />
+            </div>
+          </div>
         </div>
       </div>
 
