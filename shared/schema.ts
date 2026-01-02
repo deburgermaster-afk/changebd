@@ -262,12 +262,21 @@ export interface PendingScammer extends Scammer {
   };
 }
 
+export interface NewsSource {
+  name: string;
+  url: string;
+  logo?: string;
+}
+
 export interface News {
   id: string;
   title: string;
+  summary: string;
   content: string;
+  imageUrl?: string;
   source: string;
   sourceUrl: string;
+  crossCheckedSources: NewsSource[];
   publishedAt: string;
   trustScore: number;
   verified: boolean;
@@ -285,9 +294,16 @@ export interface NewsComment {
 
 export const insertNewsSchema = z.object({
   title: z.string().min(10).max(300),
+  summary: z.string().min(20).max(500),
   content: z.string().min(50).max(10000),
+  imageUrl: z.string().url().optional(),
   source: z.string().min(2).max(100),
   sourceUrl: z.string().url(),
+  crossCheckedSources: z.array(z.object({
+    name: z.string(),
+    url: z.string().url(),
+    logo: z.string().optional(),
+  })).default([]),
 });
 
 export type InsertNews = z.infer<typeof insertNewsSchema>;
@@ -739,9 +755,12 @@ export const constituencyVotesTable = pgTable("constituency_votes", {
 export const newsTable = pgTable("news", {
   id: serial("id").primaryKey(),
   title: varchar("title", { length: 300 }).notNull(),
+  summary: varchar("summary", { length: 500 }).notNull().default(""),
   content: text("content").notNull(),
+  imageUrl: varchar("image_url", { length: 500 }),
   source: varchar("source", { length: 100 }).notNull(),
   sourceUrl: varchar("source_url", { length: 500 }).notNull(),
+  crossCheckedSources: jsonb("cross_checked_sources").$type<{ name: string; url: string; logo?: string }[]>().notNull().default([]),
   publishedAt: timestamp("published_at").defaultNow().notNull(),
   trustScore: integer("trust_score").notNull().default(50),
   verified: boolean("verified").notNull().default(false),

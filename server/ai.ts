@@ -82,11 +82,20 @@ Respond with JSON only:
   }
 }
 
+interface CrossCheckedSource {
+  name: string;
+  url: string;
+  logo?: string;
+}
+
 interface NewsItem {
   title: string;
+  summary: string;
   content: string;
+  imageUrl?: string;
   source: string;
   sourceUrl: string;
+  crossCheckedSources: CrossCheckedSource[];
   trustScore: number;
 }
 
@@ -103,20 +112,33 @@ export async function fetchAndAnalyzeNews(existingTitles: string[] = []): Promis
 Generate 5 realistic news items about Bangladesh that would be relevant for civic engagement.
 Focus on: politics, elections, social issues, environment, education, healthcare, infrastructure.
 
-Include news from major sources like: Al Jazeera, BBC, Reuters, The Daily Star, Prothom Alo, bdnews24.
+Primary sources: Al Jazeera, BBC, Reuters, The Daily Star, Prothom Alo, bdnews24, The Guardian, DW, CNN.
 
 Respond with JSON array only:
 [
   {
     "title": "News headline",
-    "content": "Full news content (200-500 words)",
-    "source": "News source name",
+    "summary": "A short 1-2 sentence summary of the news (50-100 words)",
+    "content": "Full detailed news content (200-500 words)",
+    "imageUrl": "URL to a relevant Unsplash image (use https://images.unsplash.com/photo-xxx format)",
+    "source": "Primary news source name",
     "sourceUrl": "https://example.com/news-article",
-    "trustScore": 0.0 to 1.0 (credibility score)
+    "crossCheckedSources": [
+      {"name": "Source 2", "url": "https://source2.com/article"},
+      {"name": "Source 3", "url": "https://source3.com/article"}
+    ],
+    "trustScore": 0.0 to 1.0 (higher if cross-checked by multiple reputable sources)
   }
 ]
 
-Make the news realistic and relevant to current Bangladesh affairs (January 2026 timeframe, upcoming election on Feb 12, 2026).${excludeSection}`;
+For imageUrl, use realistic Unsplash URLs like:
+- https://images.unsplash.com/photo-1583508915901-b5f84c1dcde1 (Bangladesh politics)
+- https://images.unsplash.com/photo-1570168007204-dfb528c6958f (government buildings)
+- https://images.unsplash.com/photo-1526304640581-d334cdbbf45e (city/infrastructure)
+- https://images.unsplash.com/photo-1504711434969-e33886168f5c (news/journalism)
+
+Make the news realistic and relevant to current Bangladesh affairs (January 2026 timeframe, upcoming election on Feb 12, 2026).
+Cross-checked sources should be 1-3 other reputable news outlets that would cover the same story.${excludeSection}`;
 
   try {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -149,9 +171,17 @@ Make the news realistic and relevant to current Bangladesh affairs (January 2026
       const parsed = JSON.parse(jsonMatch[0]);
       return parsed.map((item: any) => ({
         title: item.title ?? "Untitled",
+        summary: item.summary ?? (item.content?.substring(0, 150) + "...") ?? "",
         content: item.content ?? "",
+        imageUrl: item.imageUrl,
         source: item.source ?? "Unknown",
         sourceUrl: item.sourceUrl ?? "https://example.com",
+        crossCheckedSources: Array.isArray(item.crossCheckedSources) 
+          ? item.crossCheckedSources.map((s: any) => ({
+              name: s.name ?? "Unknown",
+              url: s.url ?? "#",
+            }))
+          : [],
         trustScore: Math.min(1, Math.max(0, item.trustScore ?? 0.5)),
       }));
     }

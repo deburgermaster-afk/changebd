@@ -453,9 +453,12 @@ export async function registerRoutes(
         newsItems.map(async (item) => {
           const news = await storage.createNews({
             title: item.title,
+            summary: item.summary,
             content: item.content,
+            imageUrl: item.imageUrl,
             source: item.source,
             sourceUrl: item.sourceUrl,
+            crossCheckedSources: item.crossCheckedSources,
           });
           return { ...news, trustScore: item.trustScore };
         })

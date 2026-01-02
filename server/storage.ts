@@ -464,9 +464,12 @@ export class DatabaseStorage implements IStorage {
       newsWithComments.push({
         id: String(n.id),
         title: n.title,
+        summary: n.summary,
         content: n.content,
+        imageUrl: n.imageUrl ?? undefined,
         source: n.source,
         sourceUrl: n.sourceUrl,
+        crossCheckedSources: n.crossCheckedSources ?? [],
         publishedAt: n.publishedAt.toISOString(),
         trustScore: n.trustScore / 100,
         verified: n.verified,
@@ -493,9 +496,12 @@ export class DatabaseStorage implements IStorage {
     return {
       id: String(n.id),
       title: n.title,
+      summary: n.summary,
       content: n.content,
+      imageUrl: n.imageUrl ?? undefined,
       source: n.source,
       sourceUrl: n.sourceUrl,
+      crossCheckedSources: n.crossCheckedSources ?? [],
       publishedAt: n.publishedAt.toISOString(),
       trustScore: n.trustScore / 100,
       verified: n.verified,
@@ -513,9 +519,12 @@ export class DatabaseStorage implements IStorage {
   async createNews(data: InsertNews): Promise<News> {
     const result = await db.insert(newsTable).values({
       title: data.title,
+      summary: data.summary,
       content: data.content,
+      imageUrl: data.imageUrl,
       source: data.source,
       sourceUrl: data.sourceUrl,
+      crossCheckedSources: data.crossCheckedSources ?? [],
       status: "pending",
     }).returning();
     
@@ -523,9 +532,12 @@ export class DatabaseStorage implements IStorage {
     return {
       id: String(n.id),
       title: n.title,
+      summary: n.summary,
       content: n.content,
+      imageUrl: n.imageUrl ?? undefined,
       source: n.source,
       sourceUrl: n.sourceUrl,
+      crossCheckedSources: n.crossCheckedSources ?? [],
       publishedAt: n.publishedAt.toISOString(),
       trustScore: n.trustScore / 100,
       verified: n.verified,
@@ -578,9 +590,12 @@ export class DatabaseStorage implements IStorage {
       newsWithComments.push({
         id: String(n.id),
         title: n.title,
+        summary: n.summary,
         content: n.content,
+        imageUrl: n.imageUrl ?? undefined,
         source: n.source,
         sourceUrl: n.sourceUrl,
+        crossCheckedSources: n.crossCheckedSources ?? [],
         publishedAt: n.publishedAt.toISOString(),
         trustScore: n.trustScore / 100,
         verified: n.verified,
