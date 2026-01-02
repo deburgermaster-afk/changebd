@@ -11,81 +11,81 @@ import type { GonovoteResult } from "@shared/schema";
 
 const reformQuestions = [
   {
-    titleBn: "তত্ত্বাবধায়ক সরকার গঠন",
-    titleEn: "Caretaker Government Formation",
-    descBn: "নির্বাচনকালীন তত্ত্বাবধায়ক সরকার ব্যবস্থা পুনঃপ্রতিষ্ঠা",
-    descEn: "Reinstatement of caretaker government system during elections",
+    titleBn: "অন্তর্বর্তী সরকার ব্যবস্থা",
+    titleEn: "Interim Government System",
+    descBn: "নির্বাচন পরিচালনার জন্য অন্তর্বর্তী সরকার নিয়োগ। সংসদ মেয়াদ শেষ হওয়ার ১৫ দিন আগে বা বিলুপ্তির ১৫ দিনের মধ্যে প্রধান উপদেষ্টা নিয়োগ করতে হবে।",
+    descEn: "Appointment of interim government to conduct elections. Chief Adviser must be appointed 15 days before assembly expiry or within 15 days of dissolution.",
     icon: Users,
   },
   {
-    titleBn: "সংবিধান সংশোধন সীমাবদ্ধতা",
-    titleEn: "Constitutional Amendment Restrictions",
-    descBn: "সংবিধানের মূল কাঠামো সংশোধনে জনগণের অনুমোদন বাধ্যতামূলক",
-    descEn: "Mandatory public approval for amendments to constitutional fundamentals",
+    titleBn: "সংবিধান সংশোধন পদ্ধতি",
+    titleEn: "Constitutional Amendment Process",
+    descBn: "অনুচ্ছেদ ৭ক ও ৭খ বিলোপ। সংবিধান সংশোধনে উভয় কক্ষে দুই-তৃতীয়াংশ সংখ্যাগরিষ্ঠতা এবং গণভোটে অনুমোদন প্রয়োজন।",
+    descEn: "Deletion of Articles 7A and 7B. Constitutional amendments require two-thirds majority in both houses followed by referendum approval.",
     icon: FileText,
   },
   {
-    titleBn: "গণভোট আইন (গণভোট বিল)",
-    titleEn: "Referendum System (Gonovote Bill)",
-    descBn: "জাতীয় গুরুত্বপূর্ণ বিষয়ে জনগণের সরাসরি ভোটের অধিকার",
-    descEn: "Citizens' right to direct vote on matters of national importance",
-    icon: Vote,
-  },
-  {
-    titleBn: "সংসদে বিরোধী দলের প্রতিনিধিত্ব",
-    titleEn: "Opposition Representation in Parliament",
-    descBn: "সংসদে বিরোধী দলের ন্যায্য প্রতিনিধিত্ব নিশ্চিতকরণ",
-    descEn: "Ensuring fair opposition representation in parliament",
-    icon: Users,
-  },
-  {
-    titleBn: "প্রধানমন্ত্রীর ১০ বছর মেয়াদ সীমা",
-    titleEn: "PM 10-Year Term Limit",
-    descBn: "একজন ব্যক্তির সর্বোচ্চ ১০ বছর প্রধানমন্ত্রী থাকার সীমা",
-    descEn: "Maximum 10-year limit for any individual to serve as Prime Minister",
-    icon: Clock,
-  },
-  {
-    titleBn: "নারী প্রতিনিধিত্ব বৃদ্ধি",
-    titleEn: "Increased Women Representation",
-    descBn: "সংসদ ও সরকারি পদে নারীদের প্রতিনিধিত্ব বৃদ্ধি",
-    descEn: "Increased women representation in parliament and government positions",
-    icon: Users,
-  },
-  {
-    titleBn: "উচ্চকক্ষ প্রতিষ্ঠা",
-    titleEn: "Upper House Establishment",
-    descBn: "দ্বিকক্ষ বিশিষ্ট সংসদ প্রতিষ্ঠা - সিনেট/উচ্চকক্ষ সৃষ্টি",
-    descEn: "Establishment of bicameral parliament - creating Senate/Upper House",
+    titleBn: "দ্বিকক্ষ বিশিষ্ট সংসদ (উচ্চকক্ষ)",
+    titleEn: "Bicameral Parliament (Upper House)",
+    descBn: "১০০ সদস্যের আনুপাতিক নির্বাচিত উচ্চকক্ষ (সিনেট) প্রতিষ্ঠা। সংবিধান সংশোধনে উচ্চকক্ষের সংখ্যাগরিষ্ঠতা আবশ্যক।",
+    descEn: "Establishment of 100-member proportionally elected Upper House (Senate). Senate majority required for constitutional amendments.",
     icon: Landmark,
   },
   {
-    titleBn: "স্বাধীন বিচার বিভাগ",
-    titleEn: "Independent Judiciary",
-    descBn: "বিচার বিভাগের সম্পূর্ণ স্বাধীনতা ও নির্বাহী বিভাগ থেকে পৃথকীকরণ",
-    descEn: "Complete independence of judiciary and separation from executive",
+    titleBn: "প্রধানমন্ত্রীর মেয়াদ সীমা",
+    titleEn: "Prime Minister Term Limit",
+    descBn: "একজন ব্যক্তি সর্বোচ্চ দুইবার প্রধানমন্ত্রী হিসেবে দায়িত্ব পালন করতে পারবেন। ভবিষ্যতে স্বৈরাচারী শাসন প্রতিরোধে এই সীমা।",
+    descEn: "A person can serve as Prime Minister for maximum two terms. This limit prevents future autocratic rule.",
+    icon: Clock,
+  },
+  {
+    titleBn: "জাতীয় সাংবিধানিক কাউন্সিল",
+    titleEn: "National Constitutional Council",
+    descBn: "রাষ্ট্রের তিন বিভাগের ভারসাম্য নিশ্চিতে এনসিসি গঠন। সদস্য: রাষ্ট্রপতি, প্রধানমন্ত্রী, বিরোধী দলীয় নেতা, উভয় কক্ষের স্পিকার, প্রধান বিচারপতি।",
+    descEn: "NCC formation to ensure balance among state branches. Members: President, PM, Opposition Leader, Speakers of both houses, Chief Justice.",
     icon: Scale,
   },
   {
-    titleBn: "মৌলিক অধিকার সুরক্ষা",
-    titleEn: "Fundamental Rights Protection",
-    descBn: "ইন্টারনেট কখনো বন্ধ না করাসহ মৌলিক অধিকার সুরক্ষা",
-    descEn: "Protection of fundamental rights including internet never blocked",
+    titleBn: "মৌলিক অধিকার সম্প্রসারণ",
+    titleEn: "Fundamental Rights Expansion",
+    descBn: "মৌলিক অধিকারে খাদ্য, বস্ত্র, বাসস্থান, শিক্ষা, ইন্টারনেট এবং ভোটাধিকার অন্তর্ভুক্তি। ইন্টারনেট কখনো বন্ধ করা যাবে না।",
+    descEn: "Fundamental rights expanded to include food, clothing, shelter, education, internet, and right to vote. Internet can never be blocked.",
     icon: Globe,
   },
   {
-    titleBn: "সীমিত রাষ্ট্রপতি ক্ষমা",
-    titleEn: "Limited Presidential Pardons",
-    descBn: "রাষ্ট্রপতির ক্ষমা ক্ষমতায় সীমাবদ্ধতা আরোপ",
-    descEn: "Restrictions on presidential pardon powers",
+    titleBn: "বিচার বিভাগের স্বাধীনতা",
+    titleEn: "Judicial Independence",
+    descBn: "বিচার বিভাগকে সম্পূর্ণ আর্থিক স্বায়ত্তশাসন প্রদান। নির্বাহী বিভাগ থেকে সম্পূর্ণ পৃথকীকরণ নিশ্চিত।",
+    descEn: "Full financial autonomy for judiciary. Complete separation from executive branch ensured.",
+    icon: Scale,
+  },
+  {
+    titleBn: "স্থানীয় সরকার ক্ষমতায়ন",
+    titleEn: "Local Government Empowerment",
+    descBn: "স্থানীয় সরকার প্রতিষ্ঠানগুলো স্থানীয়ভাবে তহবিল সংগ্রহ করতে পারবে। বাজেট ঘাটতি পূরণে উচ্চকক্ষের স্থানীয় সরকার কমিটির অনুমোদন।",
+    descEn: "Local government institutions can raise funds locally. Upper House Local Government Committee approval for budget deficit allocation.",
+    icon: Users,
+  },
+  {
+    titleBn: "রাষ্ট্রের মূলনীতি পরিবর্তন",
+    titleEn: "State Fundamental Principles",
+    descBn: "জাতীয়তাবাদ, সমাজতন্ত্র, ধর্মনিরপেক্ষতার পরিবর্তে সমতা, মানবিক মর্যাদা, সামাজিক ন্যায়বিচার ও বহুত্ববাদ।",
+    descEn: "Replace nationalism, socialism, secularism with equality, human dignity, social justice and pluralism.",
     icon: Shield,
   },
   {
-    titleBn: "রাষ্ট্রপতি/প্রধানমন্ত্রী ক্ষমতার ভারসাম্য",
-    titleEn: "President/PM Power Balance",
-    descBn: "রাষ্ট্রপতি ও প্রধানমন্ত্রীর মধ্যে ক্ষমতার যথাযথ ভারসাম্য",
-    descEn: "Proper balance of power between President and Prime Minister",
-    icon: Scale,
+    titleBn: "নাগরিক পরিচয়",
+    titleEn: "National Identity",
+    descBn: "নাগরিকদের 'বাঙালি' এর পরিবর্তে 'বাংলাদেশি' হিসেবে অভিহিত করা। সকল বাংলাদেশির মাতৃভাষাকে সাধারণ ভাষা হিসেবে স্বীকৃতি।",
+    descEn: "Citizens called 'Bangladeshis' instead of 'Bengalees'. Recognition of mother tongues of all Bangladeshis as common languages.",
+    icon: Users,
+  },
+  {
+    titleBn: "রাষ্ট্রপতি নির্বাচন পদ্ধতি",
+    titleEn: "Presidential Election System",
+    descBn: "রাষ্ট্রপতির মেয়াদ ৪ বছর। উভয় কক্ষের সদস্য, জেলা সমন্বয় কাউন্সিল এবং স্থানীয় সরকার প্রতিনিধিদের ভোটে নির্বাচন।",
+    descEn: "President's term 4 years. Election by Electoral College: members of both houses, District Coordination Councils, local government representatives.",
+    icon: Vote,
   },
 ];
 
@@ -195,44 +195,16 @@ export default function GonovotePage() {
             Cast your vote on 11 proposed constitutional reforms for Bangladesh
           </p>
 
-          <div className="mb-6">
+          <div className="mb-4">
             <p className="text-sm opacity-70 mb-2">ভোটদান সময়সীমা / Voting Deadline</p>
             {result?.expiresAt && <CountdownTimer targetDate={result.expiresAt} />}
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            {!hasVoted ? (
-              <>
-                <Button
-                  size="lg"
-                  className="min-w-[140px] bg-[#006A4E] hover:bg-[#005540] border-2 border-white/30 text-white font-bold text-lg gap-2"
-                  onClick={() => voteMutation.mutate("yes")}
-                  disabled={voteMutation.isPending}
-                  data-testid="button-vote-yes"
-                >
-                  <Check className="h-5 w-5" />
-                  হ্যাঁ / YES
-                </Button>
-                <Button
-                  size="lg"
-                  className="min-w-[140px] bg-[#F42A41] hover:bg-[#d42438] border-2 border-white/30 text-white font-bold text-lg gap-2"
-                  onClick={() => voteMutation.mutate("no")}
-                  disabled={voteMutation.isPending}
-                  data-testid="button-vote-no"
-                >
-                  <X className="h-5 w-5" />
-                  না / NO
-                </Button>
-              </>
-            ) : (
-              <div className="bg-white/10 rounded-md px-6 py-3 backdrop-blur">
-                <p className="text-lg font-medium">
-                  আপনি ভোট দিয়েছেন: {userVote === 'yes' ? 'হ্যাঁ (YES)' : 'না (NO)'}
-                </p>
-                <p className="text-sm opacity-80">You have voted: {userVote?.toUpperCase()}</p>
-              </div>
-            )}
-          </div>
+          <p className="text-sm opacity-70">
+            নিচে সংস্কার প্রস্তাবগুলো পড়ুন, তারপর ভোট দিন
+            <br />
+            Read the reform proposals below, then cast your vote
+          </p>
         </div>
       </div>
 
@@ -293,7 +265,7 @@ export default function GonovotePage() {
             </p>
           </div>
 
-          <div className="grid gap-4">
+          <div className="grid gap-4 mb-8">
             {reformQuestions.map((q, idx) => (
               <Card key={idx} className="hover-elevate">
                 <CardContent className="py-4">
@@ -301,15 +273,18 @@ export default function GonovotePage() {
                     <div className="rounded-full bg-[#006A4E]/10 p-2 sm:p-3 shrink-0">
                       <q.icon className="h-5 w-5 sm:h-6 sm:w-6 text-[#006A4E]" />
                     </div>
-                    <div>
+                    <div className="flex-1">
                       <h4 className="font-semibold text-sm sm:text-base mb-1" data-testid={`text-reform-title-${idx}`}>
                         {idx + 1}. {q.titleBn}
                       </h4>
-                      <p className="text-xs sm:text-sm text-muted-foreground mb-1">
+                      <p className="text-xs sm:text-sm text-muted-foreground mb-2">
                         {q.titleEn}
                       </p>
-                      <p className="text-xs text-muted-foreground/80">
-                        {q.descBn} / {q.descEn}
+                      <p className="text-xs sm:text-sm text-muted-foreground/80 leading-relaxed">
+                        {q.descBn}
+                      </p>
+                      <p className="text-xs text-muted-foreground/70 mt-1">
+                        {q.descEn}
                       </p>
                     </div>
                   </div>
@@ -317,6 +292,54 @@ export default function GonovotePage() {
               </Card>
             ))}
           </div>
+
+          <Card className="bg-gradient-to-br from-[#006A4E]/5 to-[#F42A41]/5 border-2">
+            <CardHeader>
+              <CardTitle className="text-center text-lg sm:text-xl">
+                আপনার মতামত দিন / Cast Your Vote
+              </CardTitle>
+              <p className="text-center text-muted-foreground text-sm">
+                উপরের ১১টি সংস্কার প্রস্তাবের সাথে আপনি কি একমত?
+                <br />
+                Do you agree with the 11 reform proposals above?
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                {!hasVoted ? (
+                  <>
+                    <Button
+                      size="lg"
+                      className="min-w-[160px] bg-[#006A4E] hover:bg-[#005540] text-white font-bold text-lg gap-2"
+                      onClick={() => voteMutation.mutate("yes")}
+                      disabled={voteMutation.isPending}
+                      data-testid="button-vote-yes"
+                    >
+                      <Check className="h-5 w-5" />
+                      হ্যাঁ / YES
+                    </Button>
+                    <Button
+                      size="lg"
+                      className="min-w-[160px] bg-[#F42A41] hover:bg-[#d42438] text-white font-bold text-lg gap-2"
+                      onClick={() => voteMutation.mutate("no")}
+                      disabled={voteMutation.isPending}
+                      data-testid="button-vote-no"
+                    >
+                      <X className="h-5 w-5" />
+                      না / NO
+                    </Button>
+                  </>
+                ) : (
+                  <div className="bg-muted rounded-md px-6 py-4 text-center">
+                    <p className="text-lg font-medium">
+                      আপনি ভোট দিয়েছেন: {userVote === 'yes' ? 'হ্যাঁ (YES)' : 'না (NO)'}
+                    </p>
+                    <p className="text-sm text-muted-foreground">You have voted: {userVote?.toUpperCase()}</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
@@ -325,10 +348,15 @@ export default function GonovotePage() {
           <h3 className="text-lg sm:text-xl font-bold mb-4">
             আপনার ভোট গুরুত্বপূর্ণ
           </h3>
-          <p className="text-muted-foreground text-sm sm:text-base max-w-2xl mx-auto">
+          <p className="text-muted-foreground text-sm sm:text-base max-w-2xl mx-auto mb-4">
             এই গণভোটে অংশগ্রহণ করে বাংলাদেশের ভবিষ্যত গঠনে সহায়তা করুন। প্রতিটি ভোট একটি কণ্ঠস্বর।
             <br />
             Participate in this referendum to help shape the future of Bangladesh. Every vote is a voice.
+          </p>
+          <p className="text-xs text-muted-foreground/60">
+            তথ্যসূত্র: সংবিধান সংস্কার কমিশন রিপোর্ট ২০২৫ (প্রধান উপদেষ্টা অধ্যাপক ড. মুহাম্মদ ইউনূস)
+            <br />
+            Source: Constitutional Reform Commission Report 2025 (Chief Adviser Prof. Dr. Muhammad Yunus)
           </p>
         </div>
       </section>
