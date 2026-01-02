@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { formatNumber } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -97,7 +98,7 @@ function CandidateCard({ candidate, voteResult, isSelected, hasVoted, onSelect, 
           {hasVoted && !isShahid && (
             <div className="flex items-center gap-3 mt-2 text-sm">
               <span className="font-medium tabular-nums">{percentage.toFixed(1)}%</span>
-              <span className="text-muted-foreground tabular-nums">{votes.toLocaleString()} votes</span>
+              <span className="text-muted-foreground tabular-nums">{formatNumber(votes)} votes</span>
             </div>
           )}
         </div>
@@ -291,9 +292,9 @@ function ConstituencyDetail({ constituency, onBack }: ConstituencyDetailProps) {
           <div className="flex items-center gap-3">
             <Users className="h-5 w-5 text-muted-foreground" />
             <div>
-              <p className="font-medium">{constituency.totalVoters.toLocaleString()} Eligible Voters</p>
+              <p className="font-medium">{formatNumber(constituency.totalVoters)} Eligible Voters</p>
               <p className="text-xs text-muted-foreground">
-                {totalVotes.toLocaleString()} votes cast on this platform
+                {formatNumber(totalVotes)} votes cast on this platform
               </p>
             </div>
           </div>
@@ -309,7 +310,7 @@ function ConstituencyDetail({ constituency, onBack }: ConstituencyDetailProps) {
                 <p className="text-xs text-muted-foreground">{constituency.district}, {constituency.division}</p>
               </div>
               <div className="text-right">
-                <p className="text-xs font-medium" data-testid="text-share-votes">{totalVotes.toLocaleString()} votes</p>
+                <p className="text-xs font-medium" data-testid="text-share-votes">{formatNumber(totalVotes)} votes</p>
                 <p className="text-xs text-muted-foreground">on ChangeBD.org</p>
               </div>
             </div>
@@ -338,7 +339,7 @@ function ConstituencyDetail({ constituency, onBack }: ConstituencyDetailProps) {
                       borderRadius: "6px",
                       fontSize: "11px"
                     }}
-                    formatter={(value: number) => [`${value.toLocaleString()} votes`, "Votes"]}
+                    formatter={(value: number) => [`${formatNumber(value)} votes`, "Votes"]}
                     labelFormatter={(label) => chartData.find(d => d.party === label)?.fullName ?? label}
                   />
                   <Bar 
@@ -352,7 +353,7 @@ function ConstituencyDetail({ constituency, onBack }: ConstituencyDetailProps) {
                     <LabelList 
                       dataKey="votes" 
                       position="right" 
-                      formatter={(value: number) => `${value.toLocaleString()}`}
+                      formatter={(value: number) => `${formatNumber(value)}`}
                       className="text-xs"
                       style={{ fill: "currentColor" }}
                     />
@@ -376,7 +377,7 @@ function ConstituencyDetail({ constituency, onBack }: ConstituencyDetailProps) {
                         <span className="font-medium">{candidate.name}</span>
                         <span className="text-muted-foreground">({getPartyFullName(candidate.partyId)})</span>
                       </div>
-                      <span className="tabular-nums">{(result?.votes ?? 0).toLocaleString()} votes</span>
+                      <span className="tabular-nums">{formatNumber(result?.votes ?? 0)} votes</span>
                     </div>
                   );
                 })}

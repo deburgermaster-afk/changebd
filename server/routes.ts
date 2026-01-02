@@ -184,10 +184,13 @@ export async function registerRoutes(
     try {
       const ipHash = getIPHash(req);
       const { partyId } = insertPartyVoteSchema.parse(req.body);
+      console.log(`[Party Vote] IP hash: ${ipHash.substring(0, 8)}... voting for: ${partyId}`);
       const success = await storage.voteOnParty(partyId, ipHash);
       if (!success) {
+        console.log(`[Party Vote] DENIED - IP hash ${ipHash.substring(0, 8)}... already voted`);
         return res.status(400).json({ error: "Already voted or party not found" });
       }
+      console.log(`[Party Vote] SUCCESS - IP hash ${ipHash.substring(0, 8)}... voted for ${partyId}`);
       res.json({ success: true });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -242,10 +245,13 @@ export async function registerRoutes(
     try {
       const ipHash = getIPHash(req);
       const { candidateId } = insertConstituencyVoteSchema.omit({ constituencyId: true }).parse(req.body);
+      console.log(`[Constituency Vote] IP hash: ${ipHash.substring(0, 8)}... constituency: ${req.params.id}, candidate: ${candidateId}`);
       const success = await storage.voteOnConstituency(req.params.id, candidateId, ipHash);
       if (!success) {
+        console.log(`[Constituency Vote] DENIED - IP hash ${ipHash.substring(0, 8)}... already voted in ${req.params.id}`);
         return res.status(400).json({ error: "Already voted or candidate not found" });
       }
+      console.log(`[Constituency Vote] SUCCESS - IP hash ${ipHash.substring(0, 8)}... voted in ${req.params.id}`);
       res.json({ success: true });
     } catch (error) {
       if (error instanceof z.ZodError) {

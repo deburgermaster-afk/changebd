@@ -1,6 +1,7 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { PartyVotingSection } from "@/components/party-voting";
 import { Card, CardContent } from "@/components/ui/card";
+import { formatNumber } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -57,7 +58,7 @@ export default function PartiesPage() {
                 <Users className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="text-2xl font-bold tabular-nums">{totalVotes.toLocaleString()}</p>
+                <p className="text-2xl font-bold tabular-nums">{formatNumber(totalVotes)}</p>
                 <p className="text-xs text-muted-foreground">Total Votes</p>
               </div>
             </div>

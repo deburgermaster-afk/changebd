@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Ban, Check, Users, Vote, Ship, Wheat, Scale, Tractor, Moon, Flame, Star, CircleDot } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { formatNumber } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { politicalParties, type PartyVoteResult } from "@shared/schema";
@@ -93,7 +94,7 @@ function PartyButton({ party, voteResult, isSelected, hasVoted, onVote, isPendin
           {hasVoted && !isBanned && (
             <div className="flex items-center gap-2 sm:gap-3 mt-1 sm:mt-2 text-[10px] sm:text-xs">
               <span className="font-medium tabular-nums">{percentage.toFixed(1)}%</span>
-              <span className="text-muted-foreground tabular-nums">{votes.toLocaleString()}</span>
+              <span className="text-muted-foreground tabular-nums">{formatNumber(votes)}</span>
             </div>
           )}
         </div>
@@ -204,7 +205,7 @@ export function PartyVotingSection({
           </h2>
           <p className="text-muted-foreground text-xs sm:text-sm mt-1">
             {effectiveHasVoted 
-              ? `You voted! ${totalVotes.toLocaleString()} total votes.`
+              ? `You voted! ${formatNumber(totalVotes)} total votes.`
               : "Tap to cast your anonymous vote"}
           </p>
         </div>
@@ -301,7 +302,7 @@ export function PartyVotingSection({
           <div className="mt-3 sm:mt-4 flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
             <Users className="h-3 w-3 sm:h-4 sm:w-4" />
             <span data-testid="text-total-party-votes">
-              Total votes: {totalVotes.toLocaleString()}
+              Total votes: {formatNumber(totalVotes)}
             </span>
           </div>
         )}
