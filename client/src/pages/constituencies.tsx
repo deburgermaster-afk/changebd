@@ -238,7 +238,7 @@ function ConstituencyDetail({ constituency, onBack }: ConstituencyDetailProps) {
           await navigator.share({
             files: [file],
             title: `${constituency.code} - Vote Results`,
-            text: `Check out the voting results for ${constituency.code} on ChangeBD.org!`,
+            text: `Check out the voting results for ${constituency.code} on changebd.live!`,
           });
           toast({ title: "Shared successfully!" });
         } catch (shareError: any) {
@@ -340,7 +340,7 @@ function ConstituencyDetail({ constituency, onBack }: ConstituencyDetailProps) {
               </div>
               <div className="text-right">
                 <p className="text-xs font-medium" data-testid="text-share-votes">{formatNumber(totalVotes)} votes</p>
-                <p className="text-xs text-muted-foreground">on ChangeBD.org</p>
+                <p className="text-xs text-muted-foreground">on changebd.live</p>
               </div>
             </div>
             
@@ -415,7 +415,7 @@ function ConstituencyDetail({ constituency, onBack }: ConstituencyDetailProps) {
             
             <div className="flex items-center justify-between mt-3 pt-2 border-t border-border">
               <p className="text-xs text-muted-foreground">Bangladesh 2026 Election</p>
-              <p className="text-xs font-medium text-primary" data-testid="text-share-url">changebd.org</p>
+              <p className="text-xs font-medium text-primary" data-testid="text-share-url">changebd.live</p>
             </div>
           </Card>
         )}

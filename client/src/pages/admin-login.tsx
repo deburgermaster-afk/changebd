@@ -39,7 +39,7 @@ export default function AdminLogin() {
           </div>
           <CardTitle className="text-xl">Admin Login</CardTitle>
           <p className="text-sm text-muted-foreground mt-1">
-            ChangeBD.org Administration Panel
+            changebd.live Administration Panel
           </p>
         </CardHeader>
         <CardContent>

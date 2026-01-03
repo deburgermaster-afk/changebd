@@ -9,7 +9,7 @@ export function Footer() {
           <div>
             <div className="flex items-center gap-2 mb-3">
               <BangladeshFlag size="sm" />
-              <span className="font-semibold">ChangeBD.org</span>
+              <span className="font-semibold">changebd.live</span>
             </div>
             <p className="text-sm text-muted-foreground">
               A platform for the people of Bangladesh to raise their voice, 
@@ -48,7 +48,7 @@ export function Footer() {
         </div>
 
         <div className="border-t mt-8 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
-          <p>2026 ChangeBD.org. Made with <Heart className="h-3 w-3 inline text-destructive" /> for Bangladesh.</p>
+          <p>2026 changebd.live. Made with <Heart className="h-3 w-3 inline text-destructive" /> for Bangladesh.</p>
           <div className="flex items-center gap-4">
             <a href="#" className="hover:text-foreground transition-colors">Community Guidelines</a>
             <a href="#" className="hover:text-foreground transition-colors">Privacy Policy</a>

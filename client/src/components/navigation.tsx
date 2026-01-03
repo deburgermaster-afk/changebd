@@ -27,7 +27,7 @@ export function Navigation() {
           <Link href="/" className="flex items-center gap-2">
             <BangladeshFlag size="md" />
             <span className="font-semibold text-lg hidden sm:block" data-testid="text-logo">
-              ChangeBD.org
+              changebd.live
             </span>
           </Link>
 
