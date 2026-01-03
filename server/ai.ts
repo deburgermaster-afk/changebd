@@ -1,4 +1,5 @@
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const GNEWS_API_KEY = process.env.GNEWS_API_KEY;
 
 interface AIResponse {
   recommendation: "approve" | "reject";
@@ -190,5 +191,122 @@ Cross-checked sources should be 1-3 other reputable news outlets that would cove
   } catch (error) {
     console.error("News fetch error:", error);
     return [];
+  }
+}
+
+interface OnlineNewsItem {
+  title: string;
+  description: string;
+  content: string;
+  url: string;
+  image: string | null;
+  publishedAt: string;
+  source: {
+    name: string;
+    url: string;
+  };
+}
+
+export async function fetchOnlineNews(topic: string = "bangladesh"): Promise<NewsItem[]> {
+  if (!GNEWS_API_KEY) {
+    console.log("GNews API key not configured, falling back to AI generation");
+    return [];
+  }
+
+  try {
+    const encodedTopic = encodeURIComponent(topic);
+    const url = `https://gnews.io/api/v4/search?q=${encodedTopic}&lang=en&country=bd&max=10&apikey=${GNEWS_API_KEY}`;
+    
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      console.error(`GNews API error: ${response.status}`);
+      return [];
+    }
+
+    const data = await response.json();
+    const articles: OnlineNewsItem[] = data.articles || [];
+
+    return articles.map((article) => ({
+      title: article.title,
+      summary: article.description || article.content?.substring(0, 200) || "",
+      content: article.content || article.description || "",
+      imageUrl: article.image || undefined,
+      source: article.source?.name || "Unknown",
+      sourceUrl: article.url,
+      crossCheckedSources: [],
+      trustScore: 0.7,
+    }));
+  } catch (error) {
+    console.error("Online news fetch error:", error);
+    return [];
+  }
+}
+
+export async function enhanceNewsWithAI(newsItem: NewsItem): Promise<NewsItem> {
+  if (!OPENROUTER_API_KEY) {
+    return newsItem;
+  }
+
+  const systemPrompt = `You are a news enhancement AI for ChangeBD.org. Given a news article, provide:
+1. A better summary (50-100 words)
+2. Cross-checked sources that would likely cover this story
+3. A trust score based on the source reliability
+
+Respond with JSON only:
+{
+  "summary": "Enhanced summary",
+  "crossCheckedSources": [
+    {"name": "Source Name", "url": "https://example.com/likely-article"}
+  ],
+  "trustScore": 0.0 to 1.0
+}`;
+
+  try {
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://changebd.org",
+        "X-Title": "ChangeBD.org News Enhancement",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.0-flash-001",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: `Title: ${newsItem.title}\n\nContent: ${newsItem.content}\n\nSource: ${newsItem.source}` }
+        ],
+        temperature: 0.3,
+      }),
+    });
+
+    if (!response.ok) {
+      return newsItem;
+    }
+
+    const data = await response.json();
+    const aiText = data.choices?.[0]?.message?.content ?? "";
+    
+    const jsonMatch = aiText.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      return {
+        ...newsItem,
+        summary: parsed.summary || newsItem.summary,
+        crossCheckedSources: Array.isArray(parsed.crossCheckedSources) 
+          ? parsed.crossCheckedSources.map((s: any) => ({
+              name: s.name ?? "Unknown",
+              url: s.url ?? "#",
+            }))
+          : newsItem.crossCheckedSources,
+        trustScore: Math.min(1, Math.max(0, parsed.trustScore ?? newsItem.trustScore)),
+      };
+    }
+    
+    return newsItem;
+  } catch (error) {
+    console.error("News enhancement error:", error);
+    return newsItem;
   }
 }

@@ -5,12 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { PendingCase, PendingScammer, News } from "@shared/schema";
 import { 
   Shield, LogOut, FileText, AlertTriangle, Newspaper, 
-  Check, X, Sparkles, RefreshCw, ExternalLink, ThumbsUp, ThumbsDown
+  Check, X, Sparkles, RefreshCw, ExternalLink, ThumbsUp, ThumbsDown, Globe
 } from "lucide-react";
 
 function CaseApprovalCard({ caseItem, onApprove, onReject, isPending }: { 
@@ -305,10 +306,39 @@ export default function AdminDashboard() {
     mutationFn: () => apiRequest("POST", "/api/admin/news/generate"),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/news"] });
-      toast({ title: "5 news articles generated" });
+      toast({ title: "5 news articles generated with AI" });
     },
     onError: () => {
       toast({ title: "Failed to generate news", variant: "destructive" });
+    },
+  });
+
+  const [selectedTopic, setSelectedTopic] = useState<string>("bangladesh politics");
+  
+  const { data: topics = [] } = useQuery<{ id: string; label: string }[]>({
+    queryKey: ["/api/admin/news/topics"],
+  });
+
+  const fetchOnlineNewsMutation = useMutation({
+    mutationFn: (topic: string) => apiRequest("POST", "/api/admin/news/fetch-online", { topic }),
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/news"] });
+      if (data.message) {
+        toast({ title: data.message });
+      } else {
+        toast({ title: `${Array.isArray(data) ? data.length : 0} news articles fetched from online` });
+      }
+    },
+    onError: (error: any) => {
+      if (error?.requiresApiKey) {
+        toast({ 
+          title: "API Key Required", 
+          description: "Please configure GNEWS_API_KEY to fetch online news",
+          variant: "destructive" 
+        });
+      } else {
+        toast({ title: "Failed to fetch online news", variant: "destructive" });
+      }
     },
   });
 
@@ -456,28 +486,65 @@ export default function AdminDashboard() {
 
           <TabsContent value="news">
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between gap-4">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Newspaper className="w-5 h-5" />
-                  News Management
-                </CardTitle>
-                <Button
-                  onClick={() => generateNewsMutation.mutate()}
-                  disabled={generateNewsMutation.isPending}
-                  data-testid="button-generate-news"
-                >
-                  {generateNewsMutation.isPending ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                      Generating...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-4 h-4 mr-2" />
-                      Generate 5 News
-                    </>
-                  )}
-                </Button>
+              <CardHeader className="space-y-4">
+                <div className="flex flex-row items-center justify-between gap-4">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Newspaper className="w-5 h-5" />
+                    News Management
+                  </CardTitle>
+                  <Button
+                    onClick={() => generateNewsMutation.mutate()}
+                    disabled={generateNewsMutation.isPending}
+                    data-testid="button-generate-news"
+                  >
+                    {generateNewsMutation.isPending ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4 mr-2" />
+                        AI Generate
+                      </>
+                    )}
+                  </Button>
+                </div>
+                
+                <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-md flex-wrap">
+                  <Globe className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                  <span className="text-sm text-muted-foreground">Fetch from online:</span>
+                  <Select value={selectedTopic} onValueChange={setSelectedTopic}>
+                    <SelectTrigger className="w-[180px]" data-testid="select-news-topic">
+                      <SelectValue placeholder="Select topic" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {topics.map((topic) => (
+                        <SelectItem key={topic.id} value={topic.id}>
+                          {topic.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    variant="outline"
+                    onClick={() => fetchOnlineNewsMutation.mutate(selectedTopic)}
+                    disabled={fetchOnlineNewsMutation.isPending}
+                    data-testid="button-fetch-online-news"
+                  >
+                    {fetchOnlineNewsMutation.isPending ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                        Fetching...
+                      </>
+                    ) : (
+                      <>
+                        <Globe className="w-4 h-4 mr-2" />
+                        Fetch Online
+                      </>
+                    )}
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 {newsLoading ? (

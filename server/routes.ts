@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage, hashIP } from "./storage";
 import { insertCaseSchema, insertPollSchema, insertScammerSchema, insertCaseVoteSchema, insertPollVoteSchema, insertPartyVoteSchema, insertConstituencyVoteSchema, insertNewsCommentSchema, insertGonovoteSchema } from "@shared/schema";
 import { z } from "zod";
-import { analyzeContent, fetchAndAnalyzeNews } from "./ai";
+import { analyzeContent, fetchAndAnalyzeNews, fetchOnlineNews, enhanceNewsWithAI } from "./ai";
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
@@ -467,6 +467,75 @@ export async function registerRoutes(
     } catch (error) {
       res.status(500).json({ error: "Failed to generate news" });
     }
+  });
+
+  app.post("/api/admin/news/fetch-online", requireAdmin, async (req, res) => {
+    try {
+      const { topic } = req.body;
+      const searchTopic = topic || "bangladesh politics";
+      
+      const existingNews = await storage.getAllNews();
+      const existingTitles = existingNews.map(n => n.title.toLowerCase());
+      
+      let newsItems = await fetchOnlineNews(searchTopic);
+      
+      if (newsItems.length === 0) {
+        return res.status(400).json({ 
+          error: "No online news found. Please configure GNEWS_API_KEY or try a different topic.",
+          requiresApiKey: true 
+        });
+      }
+      
+      newsItems = newsItems.filter(item => 
+        !existingTitles.includes(item.title.toLowerCase())
+      );
+      
+      if (newsItems.length === 0) {
+        return res.json({ message: "All fetched news already exists", created: [] });
+      }
+      
+      const enhancedNews = await Promise.all(
+        newsItems.slice(0, 5).map(async (item) => {
+          return enhanceNewsWithAI(item);
+        })
+      );
+      
+      const createdNews = await Promise.all(
+        enhancedNews.map(async (item) => {
+          const news = await storage.createNews({
+            title: item.title,
+            summary: item.summary,
+            content: item.content,
+            imageUrl: item.imageUrl,
+            source: item.source,
+            sourceUrl: item.sourceUrl,
+            crossCheckedSources: item.crossCheckedSources,
+          });
+          return { ...news, trustScore: item.trustScore };
+        })
+      );
+      
+      res.json(createdNews);
+    } catch (error) {
+      console.error("Fetch online news error:", error);
+      res.status(500).json({ error: "Failed to fetch online news" });
+    }
+  });
+
+  app.get("/api/admin/news/topics", requireAdmin, async (req, res) => {
+    const topics = [
+      { id: "bangladesh", label: "Bangladesh General" },
+      { id: "bangladesh politics", label: "Politics" },
+      { id: "bangladesh election", label: "Elections" },
+      { id: "dhaka", label: "Dhaka News" },
+      { id: "bangladesh economy", label: "Economy" },
+      { id: "bangladesh education", label: "Education" },
+      { id: "bangladesh healthcare", label: "Healthcare" },
+      { id: "bangladesh environment", label: "Environment" },
+      { id: "bangladesh corruption", label: "Corruption" },
+      { id: "bangladesh protest", label: "Protests" },
+    ];
+    res.json(topics);
   });
 
   app.post("/api/admin/news/:id/approve", requireAdmin, async (req, res) => {
