@@ -33,15 +33,16 @@ export function Footer() {
             <div className="space-y-3 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <Shield className="h-4 w-4 text-primary" />
-                <span>Fully Anonymous</span>
+                <span>100% Anonymous Identity</span>
               </div>
               <div className="flex items-center gap-2">
                 <Lock className="h-4 w-4 text-primary" />
-                <span>End-to-End Encrypted</span>
+                <span>AES-256 Military-Grade Encryption</span>
               </div>
               <p className="text-xs mt-3">
                 Your data is never stored with personal identifiers. 
-                All submissions are encrypted and anonymous.
+                All submissions use SHA-256 hashing and AES-256 encryption.
+                Zero logs. Zero tracking. Complete privacy.
               </p>
             </div>
           </div>

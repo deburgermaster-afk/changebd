@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Shield, TrendingUp, Users, FileText, Vote, ArrowRight } from "lucide-react";
+import { Shield, TrendingUp, Users, FileText, Vote, ArrowRight, Lock, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -33,9 +33,19 @@ export function HeroSection({ stats }: HeroSectionProps) {
             Together we build a better Bangladesh.
           </p>
           
-          <div className="flex items-center justify-center gap-1 text-sm text-muted-foreground mb-8">
-            <Shield className="h-4 w-4 text-primary" />
-            <span>Fully Anonymous & Encrypted</span>
+          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-xs sm:text-sm text-muted-foreground mb-8 px-2">
+            <div className="flex items-center gap-1.5 bg-primary/10 px-2 py-1 rounded-full">
+              <Shield className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
+              <span>100% Anonymous</span>
+            </div>
+            <div className="flex items-center gap-1.5 bg-primary/10 px-2 py-1 rounded-full">
+              <Lock className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
+              <span>AES-256 Encrypted</span>
+            </div>
+            <div className="flex items-center gap-1.5 bg-primary/10 px-2 py-1 rounded-full">
+              <EyeOff className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
+              <span>Zero Tracking</span>
+            </div>
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-6">
