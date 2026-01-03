@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Check, X, Clock, FileText, Scale, Users, Shield, Landmark, Vote, Globe, ChevronDown } from "lucide-react";
 import type { GonovoteResult } from "@shared/schema";
+import { AnimatedNumber, AnimatedPercentage } from "@/components/animated-number";
 
 const reformQuestions = [
   {
@@ -143,6 +144,7 @@ export default function GonovotePage() {
 
   const { data: result, isLoading } = useQuery<GonovoteResult>({
     queryKey: ["/api/gonovote/result"],
+    refetchInterval: 5000,
   });
 
   const { data: voteStatus } = useQuery<{ hasVoted: boolean; vote?: string }>({
@@ -249,7 +251,7 @@ export default function GonovotePage() {
                       হ্যাঁ / YES
                     </span>
                     <span className="font-bold" data-testid="text-yes-count">
-                      {result?.yesVotes?.toLocaleString() ?? 0} ({yesPercent.toFixed(1)}%)
+                      <AnimatedNumber value={result?.yesVotes ?? 0} /> (<AnimatedPercentage value={yesPercent} />)
                     </span>
                   </div>
                   <Progress value={yesPercent} className="h-3 bg-muted [&>div]:bg-[#006A4E]" />
@@ -260,7 +262,7 @@ export default function GonovotePage() {
                       না / NO
                     </span>
                     <span className="font-bold" data-testid="text-no-count">
-                      {result?.noVotes?.toLocaleString() ?? 0} ({noPercent.toFixed(1)}%)
+                      <AnimatedNumber value={result?.noVotes ?? 0} /> (<AnimatedPercentage value={noPercent} />)
                     </span>
                   </div>
                   <Progress value={noPercent} className="h-3 bg-muted [&>div]:bg-[#F42A41]" />
@@ -270,7 +272,7 @@ export default function GonovotePage() {
                       মোট ভোট / Total Votes: 
                     </span>
                     <span className="font-bold ml-2" data-testid="text-total-votes">
-                      {result?.totalVotes?.toLocaleString() ?? 0}
+                      <AnimatedNumber value={result?.totalVotes ?? 0} />
                     </span>
                   </div>
                 </div>

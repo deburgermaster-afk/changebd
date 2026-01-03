@@ -13,6 +13,7 @@ import { Search, MapPin, Users, Check, Vote, User, ChevronRight, Building, Star,
 import { type Constituency, type ConstituencyVoteResult, divisions, politicalParties } from "@shared/schema";
 import { PartyLogo } from "@/components/party-logos";
 import html2canvas from "html2canvas";
+import { AnimatedNumber, AnimatedPercentage } from "@/components/animated-number";
 
 function getParty(partyId: string) {
   return politicalParties.find(p => p.id === partyId);
@@ -97,8 +98,8 @@ function CandidateCard({ candidate, voteResult, isSelected, hasVoted, onSelect, 
           
           {hasVoted && !isShahid && (
             <div className="flex items-center gap-3 mt-2 text-sm">
-              <span className="font-medium tabular-nums">{percentage.toFixed(1)}%</span>
-              <span className="text-muted-foreground tabular-nums">{formatNumber(votes)} votes</span>
+              <span className="font-medium tabular-nums"><AnimatedPercentage value={percentage} /></span>
+              <span className="text-muted-foreground tabular-nums"><AnimatedNumber value={votes} /> votes</span>
             </div>
           )}
         </div>
@@ -129,6 +130,7 @@ function ConstituencyDetail({ constituency, onBack }: ConstituencyDetailProps) {
 
   const { data: votes } = useQuery<ConstituencyVoteResult[]>({
     queryKey: ["/api/constituencies", constituency.id, "votes"],
+    refetchInterval: 5000,
   });
 
   const { data: voteStatus } = useQuery<Record<string, string>>({

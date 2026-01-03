@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { politicalParties, type PartyVoteResult } from "@shared/schema";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, LabelList } from "recharts";
+import { AnimatedNumber, AnimatedPercentage } from "@/components/animated-number";
 
 type PartyType = typeof politicalParties[number];
 
@@ -93,8 +94,8 @@ function PartyButton({ party, voteResult, isSelected, hasVoted, onVote, isPendin
           
           {hasVoted && !isBanned && (
             <div className="flex items-center gap-2 sm:gap-3 mt-1 sm:mt-2 text-[10px] sm:text-xs">
-              <span className="font-medium tabular-nums">{percentage.toFixed(1)}%</span>
-              <span className="text-muted-foreground tabular-nums">{formatNumber(votes)}</span>
+              <span className="font-medium tabular-nums"><AnimatedPercentage value={percentage} /></span>
+              <span className="text-muted-foreground tabular-nums"><AnimatedNumber value={votes} /></span>
             </div>
           )}
         </div>
@@ -316,7 +317,7 @@ export function PartyVotingSection({
           <div className="mt-3 sm:mt-4 flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
             <Users className="h-3 w-3 sm:h-4 sm:w-4" />
             <span data-testid="text-total-party-votes">
-              Total votes: {formatNumber(totalVotes)}
+              Total votes: <AnimatedNumber value={totalVotes} />
             </span>
           </div>
         )}

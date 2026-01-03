@@ -7,12 +7,14 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { politicalParties, type PartyVoteResult } from "@shared/schema";
 import { Info, AlertTriangle, Users, Vote } from "lucide-react";
+import { AnimatedNumber } from "@/components/animated-number";
 
 export default function PartiesPage() {
   const { toast } = useToast();
 
   const { data: results, isLoading } = useQuery<PartyVoteResult[]>({
     queryKey: ["/api/parties/votes"],
+    refetchInterval: 5000,
   });
 
   const { data: voteStatus } = useQuery<{ hasVoted: boolean; partyId?: string }>({
@@ -58,7 +60,9 @@ export default function PartiesPage() {
                 <Users className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="text-2xl font-bold tabular-nums">{formatNumber(totalVotes)}</p>
+                <p className="text-2xl font-bold tabular-nums">
+                  <AnimatedNumber value={totalVotes} />
+                </p>
                 <p className="text-xs text-muted-foreground">Total Votes</p>
               </div>
             </div>
