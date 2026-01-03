@@ -5,7 +5,7 @@ import { formatNumber } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { politicalParties, type PartyVoteResult } from "@shared/schema";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, LabelList } from "recharts";
 
 type PartyType = typeof politicalParties[number];
 
@@ -213,37 +213,51 @@ export function PartyVotingSection({
         {chartData.length > 0 && (
           <Card className="mb-6 p-4">
             <h3 className="text-sm font-medium mb-4 text-muted-foreground">Vote Distribution</h3>
-            <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis 
-                  dataKey="name" 
-                  tick={{ fontSize: 11 }}
-                  className="fill-muted-foreground"
-                />
-                <YAxis 
-                  tick={{ fontSize: 11 }}
-                  className="fill-muted-foreground"
-                />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: "hsl(var(--card))", 
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "6px",
-                    fontSize: "12px"
-                  }}
-                  labelStyle={{ fontWeight: 600 }}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="votes" 
-                  stroke="hsl(var(--primary))" 
-                  strokeWidth={2}
-                  dot={{ fill: "hsl(var(--primary))", strokeWidth: 2, r: 4 }}
-                  activeDot={{ r: 6, fill: "hsl(var(--primary))" }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            <div className="bg-muted/30 rounded-md p-2 sm:p-3">
+              <ResponsiveContainer width="100%" height={Math.max(180, chartData.length * 40)}>
+                <BarChart 
+                  data={chartData} 
+                  layout="vertical"
+                  margin={{ top: 5, right: 60, left: 5, bottom: 5 }}
+                >
+                  <XAxis type="number" hide />
+                  <YAxis 
+                    type="category"
+                    dataKey="name" 
+                    tick={{ fontSize: 11 }}
+                    className="fill-muted-foreground"
+                    width={60}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: "hsl(var(--card))", 
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "6px",
+                      fontSize: "12px"
+                    }}
+                    formatter={(value: number) => [`${formatNumber(value)} votes`, "Votes"]}
+                  />
+                  <Bar 
+                    dataKey="votes" 
+                    radius={[0, 4, 4, 0]}
+                    maxBarSize={28}
+                  >
+                    {chartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                    <LabelList 
+                      dataKey="votes" 
+                      position="right" 
+                      formatter={(value: number) => `${formatNumber(value)}`}
+                      className="text-xs"
+                      style={{ fill: "currentColor" }}
+                    />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </Card>
         )}
 
