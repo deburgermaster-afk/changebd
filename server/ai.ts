@@ -100,6 +100,97 @@ interface NewsItem {
   trustScore: number;
 }
 
+export async function generateNewsFromContext(context: string, existingTitles: string[] = []): Promise<NewsItem[]> {
+  if (!OPENROUTER_API_KEY) {
+    return [];
+  }
+
+  const excludeSection = existingTitles.length > 0 
+    ? `\n\nIMPORTANT: Do NOT generate news with these titles or similar topics (already exist):\n${existingTitles.map(t => `- "${t}"`).join('\n')}\n\nGenerate completely NEW and DIFFERENT stories.`
+    : "";
+
+  const systemPrompt = `You are a news aggregator AI for ChangeBD.org, a Bangladesh civic engagement platform.
+Generate 3 realistic news items based on the following context/topic provided by the admin.
+The news should be relevant to Bangladesh and civic engagement.
+
+CONTEXT FROM ADMIN:
+${context}
+
+Primary sources: Al Jazeera, BBC, Reuters, The Daily Star, Prothom Alo, bdnews24, The Guardian, DW, CNN.
+
+Respond with JSON array only:
+[
+  {
+    "title": "News headline",
+    "summary": "A short 1-2 sentence summary of the news (50-100 words)",
+    "content": "Full detailed news content (200-500 words)",
+    "imageUrl": "URL to a relevant Unsplash image (use https://images.unsplash.com/photo-xxx format)",
+    "source": "Primary news source name",
+    "sourceUrl": "https://example.com/news-article",
+    "crossCheckedSources": [
+      {"name": "Source 2", "url": "https://source2.com/article"},
+      {"name": "Source 3", "url": "https://source3.com/article"}
+    ],
+    "trustScore": 0.0 to 1.0 (higher if cross-checked by multiple reputable sources)
+  }
+]
+
+For imageUrl, use realistic Unsplash URLs.
+Make the news realistic and relevant to the provided context (January 2026 timeframe).${excludeSection}`;
+
+  try {
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://changebd.org",
+        "X-Title": "ChangeBD.org News",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.0-flash-001",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: `Generate 3 news items based on the context: "${context}"` }
+        ],
+        temperature: 0.8,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`OpenRouter API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const aiText = data.choices?.[0]?.message?.content ?? "";
+    
+    const jsonMatch = aiText.match(/\[[\s\S]*\]/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      return parsed.map((item: any) => ({
+        title: item.title ?? "Untitled",
+        summary: item.summary ?? (item.content?.substring(0, 150) + "...") ?? "",
+        content: item.content ?? "",
+        imageUrl: item.imageUrl,
+        source: item.source ?? "Unknown",
+        sourceUrl: item.sourceUrl ?? "https://example.com",
+        crossCheckedSources: Array.isArray(item.crossCheckedSources) 
+          ? item.crossCheckedSources.map((s: any) => ({
+              name: s.name ?? "Unknown",
+              url: s.url ?? "#",
+            }))
+          : [],
+        trustScore: Math.min(1, Math.max(0, item.trustScore ?? 0.5)),
+      }));
+    }
+    
+    return [];
+  } catch (error) {
+    console.error("Context news generation error:", error);
+    return [];
+  }
+}
+
 export async function fetchAndAnalyzeNews(existingTitles: string[] = []): Promise<NewsItem[]> {
   if (!OPENROUTER_API_KEY) {
     return [];

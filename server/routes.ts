@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage, hashIP } from "./storage";
 import { insertCaseSchema, insertPollSchema, insertScammerSchema, insertCaseVoteSchema, insertPollVoteSchema, insertPartyVoteSchema, insertConstituencyVoteSchema, insertNewsCommentSchema, insertGonovoteSchema } from "@shared/schema";
 import { z } from "zod";
-import { analyzeContent, fetchAndAnalyzeNews, fetchOnlineNews, enhanceNewsWithAI } from "./ai";
+import { analyzeContent, fetchAndAnalyzeNews, fetchOnlineNews, enhanceNewsWithAI, generateNewsFromContext } from "./ai";
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
@@ -536,6 +536,44 @@ export async function registerRoutes(
       { id: "bangladesh protest", label: "Protests" },
     ];
     res.json(topics);
+  });
+
+  app.post("/api/admin/news/generate-from-context", requireAdmin, async (req, res) => {
+    try {
+      const { context } = req.body;
+      
+      if (!context || context.trim().length < 10) {
+        return res.status(400).json({ error: "Please provide a context with at least 10 characters" });
+      }
+      
+      const existingNews = await storage.getAllNews();
+      const existingTitles = existingNews.map(n => n.title.toLowerCase());
+      
+      const newsItems = await generateNewsFromContext(context.trim(), existingTitles);
+      
+      if (newsItems.length === 0) {
+        return res.status(400).json({ error: "Failed to generate news from context. Please try again." });
+      }
+      
+      const createdNews = await Promise.all(
+        newsItems.map(async (item) => {
+          return storage.createNews({
+            title: item.title,
+            summary: item.summary,
+            content: item.content,
+            imageUrl: item.imageUrl,
+            source: item.source,
+            sourceUrl: item.sourceUrl,
+            crossCheckedSources: item.crossCheckedSources,
+          });
+        })
+      );
+      
+      res.json(createdNews);
+    } catch (error) {
+      console.error("Generate from context error:", error);
+      res.status(500).json({ error: "Failed to generate news from context" });
+    }
   });
 
   app.post("/api/admin/news/:id/approve", requireAdmin, async (req, res) => {

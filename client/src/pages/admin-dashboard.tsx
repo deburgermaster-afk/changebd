@@ -6,12 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { PendingCase, PendingScammer, News } from "@shared/schema";
 import { 
   Shield, LogOut, FileText, AlertTriangle, Newspaper, 
-  Check, X, Sparkles, RefreshCw, ExternalLink, ThumbsUp, ThumbsDown, Globe
+  Check, X, Sparkles, RefreshCw, ExternalLink, ThumbsUp, ThumbsDown, Globe, Wand2
 } from "lucide-react";
 
 function CaseApprovalCard({ caseItem, onApprove, onReject, isPending }: { 
@@ -342,6 +343,20 @@ export default function AdminDashboard() {
     },
   });
 
+  const [customContext, setCustomContext] = useState("");
+
+  const generateFromContextMutation = useMutation({
+    mutationFn: (context: string) => apiRequest("POST", "/api/admin/news/generate-from-context", { context }),
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/news"] });
+      setCustomContext("");
+      toast({ title: `${Array.isArray(data) ? data.length : 0} news articles generated from context` });
+    },
+    onError: (error: any) => {
+      toast({ title: error?.message || "Failed to generate news from context", variant: "destructive" });
+    },
+  });
+
   useEffect(() => {
     if (authStatus && !authStatus.isAdmin) {
       setLocation("/glen20/login");
@@ -544,6 +559,41 @@ export default function AdminDashboard() {
                       </>
                     )}
                   </Button>
+                </div>
+
+                <div className="p-3 bg-muted/50 rounded-md space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Wand2 className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">Generate from custom context:</span>
+                  </div>
+                  <Textarea
+                    placeholder="Enter your custom context or topic here (e.g., 'Recent developments in Bangladesh student movements and their impact on political reform')"
+                    value={customContext}
+                    onChange={(e) => setCustomContext(e.target.value)}
+                    className="min-h-[80px] text-sm"
+                    data-testid="textarea-custom-context"
+                  />
+                  <Button
+                    variant="outline"
+                    onClick={() => generateFromContextMutation.mutate(customContext)}
+                    disabled={generateFromContextMutation.isPending || customContext.trim().length < 10}
+                    data-testid="button-generate-from-context"
+                  >
+                    {generateFromContextMutation.isPending ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Wand2 className="w-4 h-4 mr-2" />
+                        Generate from Context
+                      </>
+                    )}
+                  </Button>
+                  {customContext.trim().length > 0 && customContext.trim().length < 10 && (
+                    <p className="text-xs text-muted-foreground">Please enter at least 10 characters</p>
+                  )}
                 </div>
               </CardHeader>
               <CardContent>
