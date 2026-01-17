@@ -166,7 +166,8 @@ export const insertScammerSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters").max(100),
   type: z.enum(scammerTypes),
   description: z.string().min(20, "Description must be at least 20 characters").max(2000),
-  evidence: z.array(z.string()).optional(),
+  evidenceLinks: z.array(z.string().url("Must be a valid URL")).optional(),
+  evidenceFiles: z.array(z.string()).optional(),
 });
 
 export type InsertScammer = z.infer<typeof insertScammerSchema>;
@@ -177,6 +178,8 @@ export interface Scammer {
   type: ScammerType;
   description: string;
   evidenceCount: number;
+  evidenceLinks: string[];
+  evidenceFiles: string[];
   verified: boolean;
   reportedAt: string;
 }
@@ -732,9 +735,11 @@ export const scammersTable = pgTable("scammers", {
   type: varchar("type", { length: 20 }).notNull(),
   description: text("description").notNull(),
   evidenceCount: integer("evidence_count").notNull().default(0),
+  evidenceLinks: text("evidence_links").array().default([]),
+  evidenceFiles: text("evidence_files").array().default([]),
   verified: boolean("verified").notNull().default(false),
   reportedAt: timestamp("reported_at").defaultNow().notNull(),
-  status: varchar("status", { length: 20 }).notNull().default("pending"),
+  status: varchar("status", { length: 20 }).notNull().default("approved"),
 });
 
 export const partyVotesTable = pgTable("party_votes", {

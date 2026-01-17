@@ -289,18 +289,27 @@ export class DatabaseStorage implements IStorage {
       type: s.type as Scammer["type"],
       description: s.description,
       evidenceCount: s.evidenceCount,
+      evidenceLinks: s.evidenceLinks ?? [],
+      evidenceFiles: s.evidenceFiles ?? [],
       verified: s.verified,
       reportedAt: s.reportedAt.toISOString(),
     }));
   }
 
   async createScammer(data: InsertScammer): Promise<Scammer> {
+    const evidenceLinks = data.evidenceLinks ?? [];
+    const evidenceFiles = data.evidenceFiles ?? [];
+    const evidenceCount = evidenceLinks.length + evidenceFiles.length;
+    
     const result = await db.insert(scammersTable).values({
       name: data.name,
       type: data.type,
       description: data.description,
-      evidenceCount: data.evidence?.length ?? 0,
-      status: "pending",
+      evidenceCount,
+      evidenceLinks,
+      evidenceFiles,
+      status: "approved",
+      verified: true,
     }).returning();
     
     const s = result[0];
@@ -310,6 +319,8 @@ export class DatabaseStorage implements IStorage {
       type: s.type as Scammer["type"],
       description: s.description,
       evidenceCount: s.evidenceCount,
+      evidenceLinks: s.evidenceLinks ?? [],
+      evidenceFiles: s.evidenceFiles ?? [],
       verified: s.verified,
       reportedAt: s.reportedAt.toISOString(),
     };
@@ -442,6 +453,8 @@ export class DatabaseStorage implements IStorage {
       type: s.type as Scammer["type"],
       description: s.description,
       evidenceCount: s.evidenceCount,
+      evidenceLinks: s.evidenceLinks ?? [],
+      evidenceFiles: s.evidenceFiles ?? [],
       verified: s.verified,
       reportedAt: s.reportedAt.toISOString(),
       status: s.status as ContentStatus,

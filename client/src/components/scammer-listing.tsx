@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, AlertTriangle, CheckCircle, Clock, Filter } from "lucide-react";
+import { Search, AlertTriangle, CheckCircle, Clock, Filter, ExternalLink, FileText, Link as LinkIcon, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,13 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Scammer, ScammerType } from "@shared/schema";
 
 interface ScammerListingProps {
@@ -58,6 +65,7 @@ function VerificationBadge({ verified }: { verified: boolean }) {
 export function ScammerListing({ scammers, isLoading }: ScammerListingProps) {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [selectedScammer, setSelectedScammer] = useState<Scammer | null>(null);
 
   const filteredScammers = scammers.filter(s => {
     const matchesSearch = s.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -147,7 +155,12 @@ export function ScammerListing({ scammers, isLoading }: ScammerListingProps) {
               </TableHeader>
               <TableBody>
                 {filteredScammers.map((scammer) => (
-                  <TableRow key={scammer.id} className="hover-elevate" data-testid={`row-scammer-${scammer.id}`}>
+                  <TableRow 
+                    key={scammer.id} 
+                    className="hover-elevate cursor-pointer" 
+                    onClick={() => setSelectedScammer(scammer)}
+                    data-testid={`row-scammer-${scammer.id}`}
+                  >
                     <TableCell className="font-medium" data-testid={`text-scammer-name-${scammer.id}`}>
                       {scammer.name}
                     </TableCell>
@@ -174,6 +187,98 @@ export function ScammerListing({ scammers, isLoading }: ScammerListingProps) {
             </Table>
           </div>
         )}
+
+        <Dialog open={!!selectedScammer} onOpenChange={(open) => !open && setSelectedScammer(null)}>
+          <DialogContent className="max-w-2xl max-h-[90vh]" data-testid="dialog-scammer-detail">
+            {selectedScammer && (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-xl">
+                    <AlertTriangle className="h-5 w-5 text-destructive" />
+                    {selectedScammer.name}
+                  </DialogTitle>
+                </DialogHeader>
+                <ScrollArea className="max-h-[70vh]">
+                  <div className="space-y-4 pr-4">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge variant="secondary" className={typeColors[selectedScammer.type]}>
+                        {typeLabels[selectedScammer.type]}
+                      </Badge>
+                      <VerificationBadge verified={selectedScammer.verified} />
+                      <span className="text-sm text-muted-foreground">
+                        Reported: {new Date(selectedScammer.reportedAt).toLocaleDateString()}
+                      </span>
+                    </div>
+
+                    <div>
+                      <h4 className="font-medium mb-2">Description</h4>
+                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                        {selectedScammer.description}
+                      </p>
+                    </div>
+
+                    {selectedScammer.evidenceLinks && selectedScammer.evidenceLinks.length > 0 && (
+                      <div>
+                        <h4 className="font-medium mb-2 flex items-center gap-2">
+                          <LinkIcon className="h-4 w-4" />
+                          Evidence Links ({selectedScammer.evidenceLinks.length})
+                        </h4>
+                        <div className="space-y-2">
+                          {selectedScammer.evidenceLinks.map((link, i) => (
+                            <a
+                              key={i}
+                              href={link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 p-2 bg-muted rounded-md text-sm hover-elevate"
+                              data-testid={`link-evidence-${i}`}
+                            >
+                              <ExternalLink className="h-3 w-3 flex-shrink-0" />
+                              <span className="flex-1 truncate underline">{link}</span>
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedScammer.evidenceFiles && selectedScammer.evidenceFiles.length > 0 && (
+                      <div>
+                        <h4 className="font-medium mb-2 flex items-center gap-2">
+                          <FileText className="h-4 w-4" />
+                          Evidence Files ({selectedScammer.evidenceFiles.length})
+                        </h4>
+                        <div className="grid grid-cols-2 gap-2">
+                          {selectedScammer.evidenceFiles.map((file, i) => (
+                            <div key={i} className="rounded-md overflow-hidden border">
+                              {file.startsWith("data:image") ? (
+                                <img 
+                                  src={file} 
+                                  alt={`Evidence ${i + 1}`} 
+                                  className="w-full h-32 object-cover"
+                                  data-testid={`img-evidence-${i}`}
+                                />
+                              ) : (
+                                <div className="p-4 bg-muted flex items-center justify-center">
+                                  <FileText className="h-8 w-8 text-muted-foreground" />
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {(!selectedScammer.evidenceLinks?.length && !selectedScammer.evidenceFiles?.length) && (
+                      <div className="p-4 bg-muted rounded-md text-center text-sm text-muted-foreground">
+                        No evidence attached to this report
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
