@@ -50,7 +50,7 @@ export interface InvestigationLog {
 
 export interface EvidenceItem {
   id: string;
-  type: "image" | "news" | "document" | "testimony";
+  type: "image" | "news" | "document" | "testimony" | "social_media" | "video";
   title: string;
   url?: string;
   description: string;
@@ -330,6 +330,10 @@ async function runInvestigationPipeline(investigationId: string): Promise<void> 
   await gatherOfficialFindings(investigationId);
   await delay(2000);
 
+  // Phase 3.5: Facebook & Social Media deep scan
+  await searchSocialMedia(investigationId);
+  await delay(2000);
+
   // Phase 4: Evidence search
   await searchEvidence(investigationId);
   await delay(2000);
@@ -533,6 +537,150 @@ Respond with ONLY valid JSON:
     }
   } catch {
     inv.logs.push(createLog("agent", "🏛️ Official Findings", result.substring(0, 500), "🏛️"));
+  }
+  inv.lastUpdate = new Date().toISOString();
+}
+
+// ============================
+// PHASE 3.5: FACEBOOK & SOCIAL MEDIA SCAN
+// ============================
+async function searchSocialMedia(investigationId: string): Promise<void> {
+  const inv = investigations.get(investigationId);
+  if (!inv) return;
+
+  const agent = inv.agents.find(a => a.name === "OSINT Analyst");
+  inv.logs.push(
+    createLog("agent", "📱 OSINT Analyst — Social Media Scan",
+      "Scanning Facebook posts, videos, groups, YouTube, TikTok, and X (Twitter) for case-related content...", "📱", agent?.id)
+  );
+  inv.lastUpdate = new Date().toISOString();
+
+  const result = await callAIAgent(
+    "OSINT Analyst",
+    `You are an OSINT analyst specializing in social media intelligence for Bangladesh. Search Facebook, YouTube, TikTok, and X (Twitter) for posts, videos, live streams, group discussions, and viral content related to the case. Include actual or likely Facebook/YouTube URLs where possible. Respond in valid JSON only, no markdown.`,
+    `Deep social media investigation. Case: ${inv.caseName}\nVictim: ${inv.victimName}\nDescription: ${inv.description}\nExisting evidence: ${inv.evidence.map(e => e.title).join(", ")}
+
+Search across Facebook posts, Facebook videos, Facebook groups, Facebook Live, YouTube videos, TikTok, and X/Twitter.
+
+Respond with ONLY valid JSON:
+{
+  "facebookPosts": [{"content": "post text or summary", "author": "page/person", "url": "facebook.com/...", "engagement": "likes/shares/comments", "relevance": "how it connects to case", "date": "when posted"}],
+  "facebookVideos": [{"title": "video title", "author": "uploader", "url": "facebook.com/...", "duration": "length", "views": "view count", "description": "what the video shows", "relevance": "connection to case"}],
+  "facebookGroups": [{"groupName": "name", "url": "facebook.com/groups/...", "memberCount": "approx members", "relevantDiscussion": "what people are saying"}],
+  "youtubeVideos": [{"title": "title", "channel": "channel name", "url": "youtube.com/...", "views": "views", "description": "content summary", "relevance": "connection"}],
+  "otherSocial": [{"platform": "TikTok|X|Reddit", "content": "post summary", "author": "who", "url": "url", "relevance": "connection"}],
+  "viralContent": "description of any viral posts/videos about the case",
+  "publicSentiment": "what the public is saying on social media"
+}`
+  );
+
+  try {
+    const jsonMatch = result.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+
+      // Facebook posts
+      if (Array.isArray(parsed.facebookPosts) && parsed.facebookPosts.length > 0) {
+        for (const post of parsed.facebookPosts) {
+          inv.evidence.push({
+            id: generateId(), type: "social_media",
+            title: `[FB POST] ${post.content?.substring(0, 80) || "Facebook Post"}`,
+            url: post.url,
+            description: `By: ${post.author || "Unknown"}\n${post.relevance || ""}\nEngagement: ${post.engagement || "N/A"}`,
+            source: `Facebook · ${post.date || "Recent"}`,
+            timestamp: new Date().toISOString(), verified: false,
+          });
+        }
+        inv.logs.push(
+          createLog("evidence", "📘 Facebook Posts Found",
+            parsed.facebookPosts.map((p: any) => `• ${p.author || "Unknown"}: ${p.content?.substring(0, 100) || "Post"}\n  Engagement: ${p.engagement || "N/A"} · ${p.relevance || ""}`).join("\n\n"),
+            "📘", agent?.id)
+        );
+      }
+
+      // Facebook videos
+      if (Array.isArray(parsed.facebookVideos) && parsed.facebookVideos.length > 0) {
+        for (const vid of parsed.facebookVideos) {
+          inv.evidence.push({
+            id: generateId(), type: "video",
+            title: `[FB VIDEO] ${vid.title || "Facebook Video"}`,
+            url: vid.url,
+            description: `${vid.description || ""}\nBy: ${vid.author || "Unknown"} · Views: ${vid.views || "N/A"} · Duration: ${vid.duration || "N/A"}`,
+            source: "Facebook Video",
+            timestamp: new Date().toISOString(), verified: false,
+          });
+        }
+        inv.logs.push(
+          createLog("evidence", "🎬 Facebook Videos Found",
+            parsed.facebookVideos.map((v: any) => `• ${v.title || "Video"} by ${v.author || "Unknown"}\n  Views: ${v.views || "N/A"} · ${v.relevance || ""}`).join("\n\n"),
+            "🎬", agent?.id)
+        );
+      }
+
+      // Facebook groups
+      if (Array.isArray(parsed.facebookGroups) && parsed.facebookGroups.length > 0) {
+        for (const group of parsed.facebookGroups) {
+          inv.evidence.push({
+            id: generateId(), type: "social_media",
+            title: `[FB GROUP] ${group.groupName || "Facebook Group"}`,
+            url: group.url,
+            description: `Members: ${group.memberCount || "N/A"}\nDiscussion: ${group.relevantDiscussion || "N/A"}`,
+            source: "Facebook Group",
+            timestamp: new Date().toISOString(), verified: false,
+          });
+        }
+        inv.logs.push(
+          createLog("evidence", "👥 Facebook Groups Discussing Case",
+            parsed.facebookGroups.map((g: any) => `• ${g.groupName} (${g.memberCount || "?"} members)\n  ${g.relevantDiscussion || ""}`).join("\n\n"),
+            "👥", agent?.id)
+        );
+      }
+
+      // YouTube videos
+      if (Array.isArray(parsed.youtubeVideos) && parsed.youtubeVideos.length > 0) {
+        for (const yt of parsed.youtubeVideos) {
+          inv.evidence.push({
+            id: generateId(), type: "video",
+            title: `[YOUTUBE] ${yt.title || "YouTube Video"}`,
+            url: yt.url,
+            description: `Channel: ${yt.channel || "Unknown"} · Views: ${yt.views || "N/A"}\n${yt.description || ""}`,
+            source: "YouTube",
+            timestamp: new Date().toISOString(), verified: false,
+          });
+        }
+        inv.logs.push(
+          createLog("evidence", "▶️ YouTube Videos Found",
+            parsed.youtubeVideos.map((y: any) => `• ${y.title} — ${y.channel || "Unknown"}\n  Views: ${y.views || "N/A"} · ${y.relevance || ""}`).join("\n\n"),
+            "▶️", agent?.id)
+        );
+      }
+
+      // Other social (TikTok, X, Reddit)
+      if (Array.isArray(parsed.otherSocial) && parsed.otherSocial.length > 0) {
+        for (const os of parsed.otherSocial) {
+          inv.evidence.push({
+            id: generateId(), type: "social_media",
+            title: `[${(os.platform || "SOCIAL").toUpperCase()}] ${os.content?.substring(0, 60) || "Post"}`,
+            url: os.url,
+            description: `By: ${os.author || "Unknown"}\n${os.relevance || ""}`,
+            source: os.platform || "Social Media",
+            timestamp: new Date().toISOString(), verified: false,
+          });
+        }
+      }
+
+      // Viral content & public sentiment
+      const summaryParts: string[] = [];
+      if (parsed.viralContent) summaryParts.push(`🔥 Viral: ${parsed.viralContent}`);
+      if (parsed.publicSentiment) summaryParts.push(`💬 Public Sentiment: ${parsed.publicSentiment}`);
+      if (summaryParts.length > 0) {
+        inv.logs.push(
+          createLog("evidence", "📊 Social Media Landscape", summaryParts.join("\n\n"), "📊", agent?.id)
+        );
+      }
+    }
+  } catch {
+    inv.logs.push(createLog("agent", "📱 Social Media Scan", result.substring(0, 500), "📱", agent?.id));
   }
   inv.lastUpdate = new Date().toISOString();
 }
@@ -786,11 +934,13 @@ Respond with ONLY valid JSON:
 // ============================
 // Rotate which agent does the follow-up to show variety
 const FOLLOWUP_AGENTS = [
-  { name: "OSINT Analyst", task: "scanning news feeds and social media for new mentions" },
+  { name: "OSINT Analyst", task: "scanning Facebook posts, groups and pages for new mentions" },
   { name: "Forensic Examiner", task: "re-analyzing timeline for inconsistencies" },
-  { name: "Profile Builder", task: "refining suspect and witness profiles" },
-  { name: "Pattern Detector", task: "cross-referencing evidence for new connections" },
-  { name: "Report Synthesizer", task: "updating case summary with latest findings" },
+  { name: "OSINT Analyst", task: "checking YouTube, TikTok, and X for new videos and posts" },
+  { name: "Profile Builder", task: "refining suspect and witness profiles from social media" },
+  { name: "Pattern Detector", task: "cross-referencing Facebook and news evidence for connections" },
+  { name: "Report Synthesizer", task: "updating case summary with latest social media findings" },
+  { name: "OSINT Analyst", task: "monitoring Facebook Live streams and viral content" },
 ];
 
 async function runFollowUpCheck(investigationId: string): Promise<void> {

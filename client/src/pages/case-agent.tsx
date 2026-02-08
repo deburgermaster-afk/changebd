@@ -35,6 +35,8 @@ import {
   Zap,
   ArrowLeft,
   Plus,
+  Video,
+  Globe,
 } from "lucide-react";
 
 interface AgentStatus {
@@ -59,7 +61,7 @@ interface InvestigationLog {
 
 interface EvidenceItem {
   id: string;
-  type: "image" | "news" | "document" | "testimony";
+  type: "image" | "news" | "document" | "testimony" | "social_media" | "video";
   title: string;
   url?: string;
   description: string;
@@ -316,15 +318,74 @@ function LogEntry({ log, index }: { log: InvestigationLog; index: number }) {
 // EVIDENCE PANEL
 // ===========================
 function EvidencePanel({ evidence }: { evidence: EvidenceItem[] }) {
-  const imageEvidence = evidence.filter(e => e.type === "image");
+  const socialEvidence = evidence.filter(e => e.type === "social_media");
+  const videoEvidence = evidence.filter(e => e.type === "video");
   const newsEvidence = evidence.filter(e => e.type === "news");
   const docEvidence = evidence.filter(e => e.type === "document" || e.type === "testimony");
+  const imageEvidence = evidence.filter(e => e.type === "image");
 
   return (
     <ScrollArea className="h-[600px]">
       <div className="space-y-4 p-4">
         {evidence.length === 0 && (
           <p className="text-sm text-muted-foreground text-center py-8">No evidence collected yet. Agents are investigating...</p>
+        )}
+
+        {socialEvidence.length > 0 && (
+          <div>
+            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <Globe className="h-3.5 w-3.5 text-blue-400" /> Social Media Posts ({socialEvidence.length})
+            </h4>
+            <div className="space-y-2">
+              {socialEvidence.map((item) => (
+                <div key={item.id} className="p-2.5 rounded-lg bg-blue-500/5 border border-blue-500/20 text-xs space-y-1">
+                  <div className="font-medium flex items-start gap-1.5">
+                    {item.title.includes("[FB") && <span className="text-blue-500 shrink-0">f</span>}
+                    {item.title.includes("[TIKTOK") && <span className="shrink-0">♪</span>}
+                    {item.title.includes("[X]") && <span className="shrink-0">𝕏</span>}
+                    <span className="break-words">{item.title}</span>
+                  </div>
+                  <p className="text-muted-foreground whitespace-pre-wrap">{item.description}</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">{item.source}</span>
+                    {item.url && (
+                      <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">
+                        Open →
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {videoEvidence.length > 0 && (
+          <div>
+            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <Video className="h-3.5 w-3.5 text-red-400" /> Videos ({videoEvidence.length})
+            </h4>
+            <div className="space-y-2">
+              {videoEvidence.map((item) => (
+                <div key={item.id} className="p-2.5 rounded-lg bg-red-500/5 border border-red-500/20 text-xs space-y-1">
+                  <div className="font-medium flex items-start gap-1.5">
+                    {item.title.includes("[YOUTUBE") && <span className="text-red-500 shrink-0">▶</span>}
+                    {item.title.includes("[FB VIDEO") && <span className="text-blue-500 shrink-0">▶</span>}
+                    <span className="break-words">{item.title}</span>
+                  </div>
+                  <p className="text-muted-foreground whitespace-pre-wrap">{item.description}</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">{item.source}</span>
+                    {item.url && (
+                      <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-red-400 hover:underline">
+                        Watch →
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
 
         {newsEvidence.length > 0 && (
