@@ -57,7 +57,7 @@ export interface CaseInvestigation {
   humanReports: HumanReport[];
   createdAt: string;
   lastUpdate: string;
-  triggerInterval: number; // in ms, default 120000 (2 min)
+  triggerInterval: number; // in ms, default 1000 (1 sec)
   summary?: string;
 }
 
@@ -193,7 +193,7 @@ export async function createInvestigation(
     humanReports: [],
     createdAt: new Date().toISOString(),
     lastUpdate: new Date().toISOString(),
-    triggerInterval: 120000,
+    triggerInterval: 1000,
   };
 
   // Initial log
@@ -302,7 +302,7 @@ async function runInvestigationPipeline(investigationId: string): Promise<void> 
     );
     inv2.lastUpdate = new Date().toISOString();
 
-    // Start 2-minute trigger cycle
+    // Start 1-second trigger cycle
     startTriggerCycle(investigationId);
   }
 }
@@ -728,7 +728,7 @@ function startTriggerCycle(investigationId: string): void {
 
     // Run a follow-up check
     await runFollowUpCheck(investigationId);
-  }, 120000); // 2 minutes
+  }, 1000); // 1 second
 
   investigationTimers.set(investigationId, timer);
 }

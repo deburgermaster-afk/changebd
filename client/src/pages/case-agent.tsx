@@ -539,7 +539,7 @@ function InvestigationView({ investigationId, onBack }: { investigationId: strin
 
   const { data: investigation, isLoading } = useQuery<CaseInvestigation>({
     queryKey: [`/api/investigations/${investigationId}`],
-    refetchInterval: 3000, // Poll every 3 seconds for updates
+    refetchInterval: 2000, // Poll every 2 seconds for updates
   });
 
   // Auto-scroll to top (most recent) — we reverse logs so new ones are on top
@@ -777,7 +777,7 @@ function InvestigationView({ investigationId, onBack }: { investigationId: strin
 function InvestigationList({ onSelect, onCreate }: { onSelect: (id: string) => void; onCreate: () => void }) {
   const { data: investigations, isLoading } = useQuery<CaseInvestigation[]>({
     queryKey: ["/api/investigations"],
-    refetchInterval: 10000,
+    refetchInterval: 2000,
   });
 
   return (
