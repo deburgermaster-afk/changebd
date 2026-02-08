@@ -164,8 +164,10 @@ async function loadInvestigationsFromDB(): Promise<void> {
   }
 }
 
-// Load on module init
-loadInvestigationsFromDB();
+// Export initialize function to be called from server startup
+export async function initializeCaseAgent(): Promise<void> {
+  await loadInvestigationsFromDB();
+}
 
 function gid(): string {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
