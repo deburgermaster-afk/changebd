@@ -14,6 +14,7 @@ const navItems = [
   { href: "/news", label: "News" },
   { href: "/leaderboard", label: "Leaderboard" },
   { href: "/scammers", label: "Scammers" },
+  { href: "/case-agent", label: "Agent" },
 ];
 
 export function Navigation() {
@@ -27,7 +28,7 @@ export function Navigation() {
           <Link href="/" className="flex items-center gap-2">
             <BangladeshFlag size="md" />
             <span className="font-semibold text-lg hidden sm:block" data-testid="text-logo">
-              changebd.live
+              changebd.online
             </span>
           </Link>
 

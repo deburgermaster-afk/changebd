@@ -4,6 +4,7 @@ import { storage, hashIP } from "./storage";
 import { insertCaseSchema, insertPollSchema, insertScammerSchema, insertCaseVoteSchema, insertPollVoteSchema, insertPartyVoteSchema, insertConstituencyVoteSchema, insertNewsCommentSchema, insertGonovoteSchema } from "@shared/schema";
 import { z } from "zod";
 import { analyzeContent, fetchAndAnalyzeNews, fetchOnlineNews, enhanceNewsWithAI, generateNewsFromContext } from "./ai";
+import { createInvestigation, getInvestigation, getAllInvestigations, addHumanReport, pauseInvestigation, resumeInvestigation } from "./case-agent";
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
@@ -653,6 +654,80 @@ export async function registerRoutes(
       }
       res.status(500).json({ error: "Failed to add comment" });
     }
+  });
+
+  // ========================================
+  // Case Agent Investigation Routes
+  // ========================================
+
+  app.post("/api/investigations", async (req, res) => {
+    try {
+      const { caseName, victimName, description } = z.object({
+        caseName: z.string().min(5, "Case name must be at least 5 characters"),
+        victimName: z.string().min(2, "Victim name is required"),
+        description: z.string().min(10, "Description must be at least 10 characters"),
+      }).parse(req.body);
+
+      const investigation = await createInvestigation(caseName, victimName, description);
+      res.status(201).json(investigation);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid data", details: error.errors });
+      }
+      res.status(500).json({ error: "Failed to create investigation" });
+    }
+  });
+
+  app.get("/api/investigations", async (req, res) => {
+    try {
+      const investigations = getAllInvestigations();
+      res.json(investigations);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch investigations" });
+    }
+  });
+
+  app.get("/api/investigations/:id", async (req, res) => {
+    try {
+      const investigation = getInvestigation(req.params.id);
+      if (!investigation) {
+        return res.status(404).json({ error: "Investigation not found" });
+      }
+      res.json(investigation);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch investigation" });
+    }
+  });
+
+  app.post("/api/investigations/:id/report", async (req, res) => {
+    try {
+      const { content } = z.object({
+        content: z.string().min(5, "Report must be at least 5 characters"),
+      }).parse(req.body);
+
+      const report = await addHumanReport(req.params.id, content);
+      if (!report) {
+        return res.status(404).json({ error: "Investigation not found" });
+      }
+      res.json(report);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid data", details: error.errors });
+      }
+      res.status(500).json({ error: "Failed to submit report" });
+    }
+  });
+
+  app.post("/api/investigations/:id/pause", async (req, res) => {
+    const success = pauseInvestigation(req.params.id);
+    if (!success) return res.status(404).json({ error: "Investigation not found" });
+    res.json({ success: true });
+  });
+
+  app.post("/api/investigations/:id/resume", async (req, res) => {
+    const success = resumeInvestigation(req.params.id);
+    if (!success) return res.status(404).json({ error: "Investigation not found or not paused" });
+    res.json({ success: true });
   });
 
   return httpServer;

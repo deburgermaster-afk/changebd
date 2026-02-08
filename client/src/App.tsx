@@ -22,6 +22,7 @@ import NewsArticlePage from "@/pages/news-article";
 import AdminLogin from "@/pages/admin-login";
 import AdminDashboard from "@/pages/admin-dashboard";
 import GonovotePage from "@/pages/gonovote";
+import CaseAgentPage from "@/pages/case-agent";
 
 function Router() {
   return (
@@ -41,6 +42,7 @@ function Router() {
       <Route path="/glen20/login" component={AdminLogin} />
       <Route path="/glen20/dashboard" component={AdminDashboard} />
       <Route path="/gonovote" component={GonovotePage} />
+      <Route path="/case-agent" component={CaseAgentPage} />
       <Route component={NotFound} />
     </Switch>
   );
