@@ -719,13 +719,13 @@ export async function registerRoutes(
   });
 
   app.post("/api/investigations/:id/pause", async (req, res) => {
-    const success = pauseInvestigation(req.params.id);
+    const success = await pauseInvestigation(req.params.id);
     if (!success) return res.status(404).json({ error: "Investigation not found" });
     res.json({ success: true });
   });
 
   app.post("/api/investigations/:id/resume", async (req, res) => {
-    const success = resumeInvestigation(req.params.id);
+    const success = await resumeInvestigation(req.params.id);
     if (!success) return res.status(404).json({ error: "Investigation not found or not paused" });
     res.json({ success: true });
   });

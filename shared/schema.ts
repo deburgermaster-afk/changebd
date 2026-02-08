@@ -795,6 +795,28 @@ export const gonovoteVotesTable = pgTable("gonovote_votes", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// ========================================
+// Case Agent Investigations
+// ========================================
+export const investigationsTable = pgTable("investigations", {
+  id: varchar("id", { length: 50 }).primaryKey(),
+  caseName: varchar("case_name", { length: 300 }).notNull(),
+  victimName: varchar("victim_name", { length: 200 }).notNull(),
+  description: text("description").notNull(),
+  status: varchar("status", { length: 50 }).notNull().default("initializing"),
+  agents: jsonb("agents").$type<any[]>().notNull().default([]),
+  logs: jsonb("logs").$type<any[]>().notNull().default([]),
+  evidence: jsonb("evidence").$type<any[]>().notNull().default([]),
+  suspects: jsonb("suspects").$type<any[]>().notNull().default([]),
+  humanReports: jsonb("human_reports").$type<any[]>().notNull().default([]),
+  summary: text("summary"),
+  triggerCount: integer("trigger_count").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  lastUpdate: timestamp("last_update").defaultNow().notNull(),
+});
+
+export type DbInvestigation = typeof investigationsTable.$inferSelect;
+
 export type DbCase = typeof casesTable.$inferSelect;
 export type DbPoll = typeof pollsTable.$inferSelect;
 export type DbScammer = typeof scammersTable.$inferSelect;

@@ -1,7 +1,16 @@
-// Case Agent v3 — complete rewrite
+// Case Agent v3 — with database persistence
 // Simpler prompts, text fallback, real data extraction, works for ANY case type
 
+import { drizzle } from "drizzle-orm/node-postgres";
+import { eq } from "drizzle-orm";
+import pg from "pg";
+import { investigationsTable } from "@shared/schema";
+
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+
+// Database connection
+const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+const db = drizzle(pool);
 
 // Free models — Gemini first (best at following instructions)
 const FREE_MODELS = [
@@ -93,11 +102,70 @@ export interface HumanReport {
 }
 
 // ============================
-// STATE
+// STATE — in-memory cache + database persistence
 // ============================
 const investigations = new Map<string, CaseInvestigation>();
 const investigationTimers = new Map<string, NodeJS.Timeout>();
 const lastCallTime = new Map<string, number>();
+const MIN_CALL_GAP_MS = 2000;
+
+// Helper: save investigation to database
+async function saveInvestigation(inv: CaseInvestigation): Promise<void> {
+  try {
+    await db.update(investigationsTable)
+      .set({
+        status: inv.status,
+        agents: inv.agents,
+        logs: inv.logs,
+        evidence: inv.evidence,
+        suspects: inv.suspects,
+        humanReports: inv.humanReports,
+        summary: inv.summary,
+        triggerCount: inv.triggerCount,
+        lastUpdate: new Date(),
+      })
+      .where(eq(investigationsTable.id, inv.id));
+  } catch (e) {
+    console.error("[Agent] DB save error:", e);
+  }
+}
+
+// Helper: load all investigations from database on startup
+async function loadInvestigationsFromDB(): Promise<void> {
+  try {
+    const rows = await db.select().from(investigationsTable);
+    for (const row of rows) {
+      const inv: CaseInvestigation = {
+        id: row.id,
+        caseName: row.caseName,
+        victimName: row.victimName,
+        description: row.description,
+        status: row.status as CaseInvestigation["status"],
+        agents: (row.agents || []) as AgentStatus[],
+        logs: (row.logs || []) as InvestigationLog[],
+        evidence: (row.evidence || []) as EvidenceItem[],
+        suspects: (row.suspects || []) as SuspectProfile[],
+        humanReports: (row.humanReports || []) as HumanReport[],
+        createdAt: row.createdAt.toISOString(),
+        lastUpdate: row.lastUpdate.toISOString(),
+        triggerInterval: 15000,
+        triggerCount: row.triggerCount || 0,
+        summary: row.summary || undefined,
+      };
+      investigations.set(inv.id, inv);
+      // Restart trigger cycle for active investigations
+      if (inv.status === "active") {
+        startTriggerCycle(inv.id);
+      }
+    }
+    console.log(`[Agent] Loaded ${rows.length} investigations from DB`);
+  } catch (e) {
+    console.error("[Agent] DB load error:", e);
+  }
+}
+
+// Load on module init
+loadInvestigationsFromDB();
 const MIN_CALL_GAP_MS = 2000;
 
 function gid(): string {
@@ -221,6 +289,27 @@ export async function createInvestigation(
   };
 
   inv.logs.push(log("system", "🔐 Case Opened", `Investigation "${caseName}" initiated.\nSubject: ${victimName}\n${description}`, "🔐"));
+
+  // Insert into database first
+  try {
+    await db.insert(investigationsTable).values({
+      id: inv.id,
+      caseName: inv.caseName,
+      victimName: inv.victimName,
+      description: inv.description,
+      status: inv.status,
+      agents: inv.agents,
+      logs: inv.logs,
+      evidence: inv.evidence,
+      suspects: inv.suspects,
+      humanReports: inv.humanReports,
+      triggerCount: inv.triggerCount,
+    });
+    console.log(`[Agent] Created investigation ${id} in DB`);
+  } catch (e) {
+    console.error("[Agent] DB insert error:", e);
+  }
+
   investigations.set(id, inv);
 
   // Agents online instantly
@@ -237,6 +326,7 @@ export async function createInvestigation(
   inv.status = "investigating";
   inv.logs.push(log("system", "🚀 Investigation Started", "5 agents deployed. Starting multi-phase investigation...", "🚀"));
   inv.lastUpdate = new Date().toISOString();
+  await saveInvestigation(inv);
 
   // Run async
   runPipeline(id);
@@ -391,6 +481,7 @@ IMPORTANT: Respond with ONLY the JSON array.`
       inv.logs.push(log("agent", "📱 Social Media — Retry Pending", "Will retry in monitoring.", "⚠️", a?.id));
     }
     inv.lastUpdate = new Date().toISOString();
+    await saveInvestigation(inv);
   }
   await delay(3000);
 
@@ -425,6 +516,7 @@ Write 4-6 detailed paragraphs. Do NOT use JSON.`
       inv.logs.push(log("agent", "🕐 Forensic — Limited", "Will expand in monitoring.", "⚠️", a?.id));
     }
     inv.lastUpdate = new Date().toISOString();
+    await saveInvestigation(inv);
   }
   await delay(3000);
 
@@ -487,6 +579,7 @@ Respond with ONLY valid JSON (no markdown, no extra text):
       inv.logs.push(log("conclusion", "📊 Investigation Summary", clean(result), "📊", ra?.id));
     }
     inv.lastUpdate = new Date().toISOString();
+    await saveInvestigation(inv);
   }
 
   // Transition to active monitoring
@@ -496,6 +589,7 @@ Respond with ONLY valid JSON (no markdown, no extra text):
     inv2.logs.push(log("system", "🔄 Active Monitoring",
       `Initial investigation complete: ${inv2.evidence.length} evidence items, ${inv2.suspects.length} suspects identified.\nAgents now check for updates every 15 seconds.`, "🔄"));
     inv2.lastUpdate = new Date().toISOString();
+    await saveInvestigation(inv2);
     startTriggerCycle(id);
   }
 }
@@ -689,6 +783,7 @@ async function runFollowUp(id: string): Promise<void> {
   }
 
   inv.lastUpdate = new Date().toISOString();
+  await saveInvestigation(inv);
 }
 
 // ============================
@@ -719,6 +814,7 @@ Respond JSON only: {"credibility":"high/medium/low","useful":true,"analysis":"wh
     }
   }
   inv.lastUpdate = new Date().toISOString();
+  await saveInvestigation(inv);
 }
 
 // ============================
@@ -744,7 +840,7 @@ export async function addHumanReport(id: string, content: string): Promise<Human
   return report;
 }
 
-export function pauseInvestigation(id: string): boolean {
+export async function pauseInvestigation(id: string): Promise<boolean> {
   const inv = investigations.get(id);
   if (!inv) return false;
   inv.status = "paused";
@@ -752,15 +848,17 @@ export function pauseInvestigation(id: string): boolean {
   inv.lastUpdate = new Date().toISOString();
   const t = investigationTimers.get(id);
   if (t) { clearInterval(t); investigationTimers.delete(id); }
+  await saveInvestigation(inv);
   return true;
 }
 
-export function resumeInvestigation(id: string): boolean {
+export async function resumeInvestigation(id: string): Promise<boolean> {
   const inv = investigations.get(id);
   if (!inv || inv.status !== "paused") return false;
   inv.status = "active";
   inv.logs.push(log("system", "▶️ Resumed", "Monitoring restarted.", "▶️"));
   inv.lastUpdate = new Date().toISOString();
+  await saveInvestigation(inv);
   startTriggerCycle(id);
   return true;
 }

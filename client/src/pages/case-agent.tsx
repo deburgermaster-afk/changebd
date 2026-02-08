@@ -649,16 +649,16 @@ function InvestigationView({ investigationId, onBack }: { investigationId: strin
           <Dialog>
             <DialogTrigger asChild>
               <Button variant="outline" size="sm" className="gap-1.5 border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/10">
-                <Image className="h-3.5 w-3.5" />
+                <Shield className="h-3.5 w-3.5" />
                 Evidence
                 <Badge variant="secondary" className="ml-1 h-4 text-[10px]">{investigation.evidence.length}</Badge>
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-lg max-h-[80vh]">
+            <DialogContent className="max-w-2xl max-h-[85vh]">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
-                  <Image className="h-5 w-5 text-yellow-400" />
-                  Collected Evidence
+                  <Shield className="h-5 w-5 text-yellow-400" />
+                  Collected Evidence ({investigation.evidence.length})
                 </DialogTitle>
               </DialogHeader>
               <EvidencePanel evidence={investigation.evidence} />
