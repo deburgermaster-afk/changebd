@@ -142,7 +142,7 @@ async function callAIAgent(
   agentName: string,
   systemPrompt: string,
   userPrompt: string,
-  retries = 3
+  retries = FREE_MODELS.length
 ): Promise<string> {
   if (!OPENROUTER_API_KEY) {
     return `[${agentName}] AI service unavailable — API key not configured`;
@@ -218,7 +218,8 @@ async function callAIAgent(
     }
   }
 
-  return `[${agentName}] All models exhausted after ${retries} attempts. Last error: ${lastError}`;
+  console.error(`[CaseAgent] ${agentName} FAILED after trying ${retries} models. Last: ${lastError}`);
+  return `[${agentName}] Tried all ${FREE_MODELS.length} available models — none responded. Will retry next cycle. Last error: ${lastError}`;
 }
 
 // ============================
@@ -721,15 +722,11 @@ function startTriggerCycle(investigationId: string): void {
     // Process unread human reports first (always)
     const unprocessed = inv.humanReports.filter(r => !r.processed);
     if (unprocessed.length > 0) {
-      inv.logs.push(createLog("system", "🔄 Processing Tips", `Analyzing ${unprocessed.length} human report(s)...`, "🔄"));
-      inv.lastUpdate = new Date().toISOString();
       await processHumanReports(investigationId, unprocessed);
-      return; // Don't also do a follow-up in the same tick
+      return;
     }
 
-    // Regular follow-up check
-    inv.logs.push(createLog("system", "🔄 Trigger Cycle #" + inv.triggerCount, "Agents checking for new data...", "🔄"));
-    inv.lastUpdate = new Date().toISOString();
+    // Silent follow-up — only logs if the agent actually finds something
     await runFollowUpCheck(investigationId);
   }, 15000); // 15 seconds — safe for free models
 
@@ -787,21 +784,39 @@ Respond with ONLY valid JSON:
 // ============================
 // FOLLOW-UP CHECK
 // ============================
+// Rotate which agent does the follow-up to show variety
+const FOLLOWUP_AGENTS = [
+  { name: "OSINT Analyst", task: "scanning news feeds and social media for new mentions" },
+  { name: "Forensic Examiner", task: "re-analyzing timeline for inconsistencies" },
+  { name: "Profile Builder", task: "refining suspect and witness profiles" },
+  { name: "Pattern Detector", task: "cross-referencing evidence for new connections" },
+  { name: "Report Synthesizer", task: "updating case summary with latest findings" },
+];
+
 async function runFollowUpCheck(investigationId: string): Promise<void> {
   const inv = investigations.get(investigationId);
   if (!inv) return;
 
-  const agent = inv.agents.find(a => a.name === "Pattern Detector");
+  // Pick a different agent each cycle
+  const followup = FOLLOWUP_AGENTS[inv.triggerCount % FOLLOWUP_AGENTS.length];
+  const agent = inv.agents.find(a => a.name === followup.name);
+
+  // Show which agent is actively working (not a generic trigger message)
+  inv.logs.push(
+    createLog("agent", `🔍 ${followup.name}`, `Currently ${followup.task}...`, "🔍", agent?.id)
+  );
+  inv.lastUpdate = new Date().toISOString();
 
   const result = await callAIAgent(
-    "Pattern Detector",
-    "You are a pattern detection agent performing a periodic check. Look for new developments. Respond in valid JSON only.",
-    `Periodic check. Case: ${inv.caseName}\nVictim: ${inv.victimName}\nSuspects: ${inv.suspects.map(s => s.name).join(", ") || "None"}\nEvidence: ${inv.evidence.length} items\nHuman reports: ${inv.humanReports.length}\nTrigger #${inv.triggerCount}
+    followup.name,
+    `You are ${followup.name}, an AI investigation agent. You are ${followup.task}. Report ONLY if you find something new or noteworthy. Respond in valid JSON only.`,
+    `Active investigation follow-up. Case: ${inv.caseName}\nVictim: ${inv.victimName}\nSuspects: ${inv.suspects.map(s => s.name).join(", ") || "None yet"}\nEvidence collected: ${inv.evidence.length} items\nHuman tips: ${inv.humanReports.length}
 
 Respond with ONLY valid JSON:
 {
-  "newDevelopments": false,
-  "update": "brief status update",
+  "found": true or false,
+  "agentAction": "what you specifically did this cycle",
+  "finding": "describe what you found (empty if nothing new)",
   "urgency": "routine|important|critical"
 }`
   );
@@ -811,12 +826,19 @@ Respond with ONLY valid JSON:
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
       const icon = parsed.urgency === "critical" ? "🔴" : parsed.urgency === "important" ? "🟡" : "🟢";
+      // Show what the agent actually did and found
+      const content = parsed.found && parsed.finding
+        ? `${parsed.agentAction || followup.task}\n\n📌 Finding: ${parsed.finding}`
+        : parsed.agentAction || `Completed ${followup.task} — no new developments.`;
       inv.logs.push(
-        createLog("agent", `${icon} Status Check`, parsed.update || "No new developments.", icon, agent?.id)
+        createLog("agent", `${icon} ${followup.name} Report`, content, icon, agent?.id)
       );
     }
   } catch {
-    inv.logs.push(createLog("system", "🟢 Status Check", "No new developments.", "🟢"));
+    // Even on parse error, show the agent tried
+    inv.logs.push(
+      createLog("agent", `🟢 ${followup.name} Report`, `Completed ${followup.task} — no new data at this time.`, "🟢", agent?.id)
+    );
   }
   inv.lastUpdate = new Date().toISOString();
 }

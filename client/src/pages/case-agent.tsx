@@ -271,7 +271,7 @@ function AgentStatusBar({ agents }: { agents: AgentStatus[] }) {
 // TERMINAL LOG ENTRY
 // ===========================
 function LogEntry({ log, index }: { log: InvestigationLog; index: number }) {
-  const [expanded, setExpanded] = useState(index < 3);
+  const [expanded, setExpanded] = useState(true);
   const colorClass = LOG_TYPE_COLORS[log.type] || "text-foreground";
 
   return (
