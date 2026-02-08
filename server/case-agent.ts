@@ -166,7 +166,6 @@ async function loadInvestigationsFromDB(): Promise<void> {
 
 // Load on module init
 loadInvestigationsFromDB();
-const MIN_CALL_GAP_MS = 2000;
 
 function gid(): string {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
